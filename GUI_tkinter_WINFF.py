@@ -53,6 +53,7 @@ def set_default_options():
     output_dir_entry.delete(0, tk.END)
     ffmpeg_path_entry.delete(0, tk.END)
     use_same_directory_var.set(False)
+    update_command_display()
 
 # Função para aplicar opções salvas
 def apply_saved_config():
@@ -75,24 +76,28 @@ def apply_saved_config():
     audio_channels_var.set(config.get('DEFAULT', 'audio_channels', fallback='1'))
     use_same_directory_var.set(config.getboolean('DEFAULT', 'use_same_directory', fallback=False))
     toggle_output_directory()
+    update_command_display()
 
 # Função para selecionar arquivo de vídeo
 def select_file():
     file_path = filedialog.askopenfilename(title="Selecione o arquivo de vídeo")
     input_entry.delete(0, tk.END)
     input_entry.insert(0, file_path)
+    update_command_display()
 
 # Função para selecionar diretório de saída
 def select_output_directory():
     directory = filedialog.askdirectory(title="Selecione o diretório de saída")
     output_dir_entry.delete(0, tk.END)
     output_dir_entry.insert(0, directory)
+    update_command_display()
 
 # Função para selecionar o executável do FFmpeg
 def select_ffmpeg_executable():
     ffmpeg_path = filedialog.askopenfilename(filetypes=[("Executáveis", "*.exe"), ("Todos os arquivos", "*.*")], title="Selecione o executável do FFmpeg")
     ffmpeg_path_entry.delete(0, tk.END)
     ffmpeg_path_entry.insert(0, ffmpeg_path)
+    update_command_display()
 
 # Função para carregar uma configuração
 def load_config_from_file():
@@ -160,6 +165,58 @@ def convert_video():
     except subprocess.CalledProcessError as e:
         messagebox.showerror("Erro", f"Falha ao converter vídeo.\nErro: {e}")
 
+# Função para atualizar a exibição do comando FFmpeg
+def update_command_display():
+    input_file = input_entry.get()
+    output_format = format_var.get()
+    video_bitrate = video_bitrate_entry.get()
+    audio_bitrate = audio_bitrate_entry.get()
+    resolution = resolution_var.get()
+    video_codec = video_codec_var.get()
+    audio_codec = audio_codec_var.get()
+    frame_rate = frame_rate_entry.get()
+    audio_sample_rate = audio_sample_rate_entry.get()
+    audio_channels = audio_channels_var.get()
+    ffmpeg_path = ffmpeg_path_entry.get()
+
+    if use_same_directory_var.get():
+        output_dir = os.path.dirname(input_file)
+    else:
+        output_dir = output_dir_entry.get()
+
+    output_file = os.path.join(output_dir, os.path.splitext(os.path.basename(input_file))[0] + '.' + output_format)
+
+    command = f"\"{ffmpeg_path}\" -i \"{input_file}\""
+
+    if video_bitrate:
+        command += f" -b:v {video_bitrate}"
+
+    if audio_bitrate:
+        command += f" -b:a {audio_bitrate}"
+
+    if resolution != "original":
+        command += f" -s {resolution}"
+
+    if frame_rate:
+        command += f" -r {frame_rate}"
+
+    if audio_sample_rate:
+        command += f" -ar {audio_sample_rate}"
+
+    if audio_channels:
+        command += f" -ac {audio_channels}"
+
+    if video_codec != "auto":
+        command += f" -c:v {video_codec}"
+
+    if audio_codec != "auto":
+        command += f" -c:a {audio_codec}"
+
+    command += f" \"{output_file}\""
+    
+    command_display.delete(1.0, tk.END)
+    command_display.insert(tk.END, command)
+
 # Função para alternar a habilitação do campo de diretório de saída
 def toggle_output_directory():
     if use_same_directory_var.get():
@@ -168,21 +225,25 @@ def toggle_output_directory():
     else:
         output_dir_entry.config(state=tk.NORMAL)
         output_dir_button.config(state=tk.NORMAL)
+    update_command_display()
 
 # Criar janela principal
 root = tk.Tk()
 root.title("Conversor de Vídeo Avançado")
+root.geometry("800x600")  # Aumentar a largura da janela
 
 # Entrada para o arquivo de vídeo
 tk.Label(root, text="Selecione o Arquivo de Vídeo:").grid(row=0, column=0, padx=10, pady=5)
 input_entry = tk.Entry(root, width=50)
 input_entry.grid(row=0, column=1, padx=10, pady=5)
+input_entry.bind("<KeyRelease>", lambda event: update_command_display())
 tk.Button(root, text="Procurar", command=select_file).grid(row=0, column=2, padx=10, pady=5)
 
 # Diretório de saída
 tk.Label(root, text="Selecione o Diretório de Saída:").grid(row=1, column=0, padx=10, pady=5)
 output_dir_entry = tk.Entry(root, width=50)
 output_dir_entry.grid(row=1, column=1, padx=10, pady=5)
+output_dir_entry.bind("<KeyRelease>", lambda event: update_command_display())
 output_dir_button = tk.Button(root, text="Procurar", command=select_output_directory)
 output_dir_button.grid(row=1, column=2, padx=10, pady=5)
 
@@ -194,74 +255,84 @@ use_same_directory_check.grid(row=2, column=0, columnspan=3, pady=5)
 # Formato de saída
 tk.Label(root, text="Selecione o Formato de Saída:").grid(row=3, column=0, padx=10, pady=5)
 format_var = tk.StringVar()
-format_menu = tk.OptionMenu(root, format_var, "mp4", "avi", "mkv", "flv", "mov", "mp3", "wmv")
+format_menu = tk.OptionMenu(root, format_var, "mp4", "avi", "mkv", "flv", "mov", "mp3", "wmv", command=lambda _: update_command_display())
 format_menu.grid(row=3, column=1, padx=10, pady=5)
 
 # Bitrate de vídeo
 tk.Label(root, text="Bitrate de Vídeo (ex.: 204800):").grid(row=4, column=0, padx=10, pady=5)
 video_bitrate_entry = tk.Entry(root, width=20)
 video_bitrate_entry.grid(row=4, column=1, padx=10, pady=5)
+video_bitrate_entry.bind("<KeyRelease>", lambda event: update_command_display())
 
 # Bitrate de áudio
 tk.Label(root, text="Bitrate de Áudio (ex.: 65536):").grid(row=5, column=0, padx=10, pady=5)
 audio_bitrate_entry = tk.Entry(root, width=20)
 audio_bitrate_entry.grid(row=5, column=1, padx=10, pady=5)
+audio_bitrate_entry.bind("<KeyRelease>", lambda event: update_command_display())
 
 # Resolução
 tk.Label(root, text="Selecione a Resolução:").grid(row=6, column=0, padx=10, pady=5)
 resolution_var = tk.StringVar()
-resolution_menu = tk.OptionMenu(root, resolution_var, "original", "1920x1080", "1280x720", "640x480", "320x240")
+resolution_menu = tk.OptionMenu(root, resolution_var, "original", "1920x1080", "1280x720", "640x480", "320x240", command=lambda _: update_command_display())
 resolution_menu.grid(row=6, column=1, padx=10, pady=5)
 
 # Codec de vídeo
 tk.Label(root, text="Selecione o Codec de Vídeo:").grid(row=7, column=0, padx=10, pady=5)
 video_codec_var = tk.StringVar()
-video_codec_menu = tk.OptionMenu(root, video_codec_var, "auto", "libx264", "libx265", "mpeg4", "wmv2")
+video_codec_menu = tk.OptionMenu(root, video_codec_var, "auto", "libx264", "libx265", "mpeg4", "wmv2", command=lambda _: update_command_display())
 video_codec_menu.grid(row=7, column=1, padx=10, pady=5)
 
 # Codec de áudio
 tk.Label(root, text="Selecione o Codec de Áudio:").grid(row=8, column=0, padx=10, pady=5)
 audio_codec_var = tk.StringVar()
-audio_codec_menu = tk.OptionMenu(root, audio_codec_var, "auto", "aac", "mp3", "ac3", "wmav2")
+audio_codec_menu = tk.OptionMenu(root, audio_codec_var, "auto", "aac", "mp3", "ac3", "wmav2", command=lambda _: update_command_display())
 audio_codec_menu.grid(row=8, column=1, padx=10, pady=5)
 
 # Taxa de quadros
 tk.Label(root, text="Taxa de Quadros (ex.: 20):").grid(row=9, column=0, padx=10, pady=5)
 frame_rate_entry = tk.Entry(root, width=20)
 frame_rate_entry.grid(row=9, column=1, padx=10, pady=5)
+frame_rate_entry.bind("<KeyRelease>", lambda event: update_command_display())
 
 # Taxa de amostragem de áudio
 tk.Label(root, text="Taxa de Amostragem de Áudio (ex.: 22050):").grid(row=10, column=0, padx=10, pady=5)
 audio_sample_rate_entry = tk.Entry(root, width=20)
 audio_sample_rate_entry.grid(row=10, column=1, padx=10, pady=5)
+audio_sample_rate_entry.bind("<KeyRelease>", lambda event: update_command_display())
 
 # Canais de áudio
 tk.Label(root, text="Canais de Áudio:").grid(row=11, column=0, padx=10, pady=5)
 audio_channels_var = tk.StringVar()
-audio_channels_menu = tk.OptionMenu(root, audio_channels_var, "1", "2")
+audio_channels_menu = tk.OptionMenu(root, audio_channels_var, "1", "2", command=lambda _: update_command_display())
 audio_channels_menu.grid(row=11, column=1, padx=10, pady=5)
 
 # Caminho do FFmpeg
 tk.Label(root, text="Caminho do Executável FFmpeg:").grid(row=12, column=0, padx=10, pady=5)
 ffmpeg_path_entry = tk.Entry(root, width=50)
 ffmpeg_path_entry.grid(row=12, column=1, padx=10, pady=5)
+ffmpeg_path_entry.bind("<KeyRelease>", lambda event: update_command_display())
 tk.Button(root, text="Procurar", command=select_ffmpeg_executable).grid(row=12, column=2, padx=10, pady=5)
+
+# Caixa de texto para exibir o comando do FFmpeg
+tk.Label(root, text="Comando FFmpeg:").grid(row=13, column=0, padx=10, pady=5, sticky="w")
+command_display = tk.Text(root, height=4, width=80)
+command_display.grid(row=14, column=0, columnspan=3, padx=10, pady=5)
 
 # Botão para aplicar opções padrão
 default_button = tk.Button(root, text="Opções Padrão", command=set_default_options)
-default_button.grid(row=13, column=0, pady=20)
+default_button.grid(row=15, column=0, pady=20)
 
 # Botão para carregar opções salvas
 load_button = tk.Button(root, text="Carregar Configuração", command=load_config_from_file)
-load_button.grid(row=13, column=1, pady=20)
+load_button.grid(row=15, column=1, pady=20)
 
 # Botão para salvar configurações
 save_button = tk.Button(root, text="Salvar Configuração", command=save_config)
-save_button.grid(row=13, column=2, pady=20)
+save_button.grid(row=15, column=2, pady=20)
 
 # Botão para converter vídeo
 convert_button = tk.Button(root, text="Converter", command=convert_video)
-convert_button.grid(row=14, column=0, columnspan=3, pady=20)
+convert_button.grid(row=16, column=0, columnspan=3, pady=20)
 
 # Aplicar configurações padrão no início, sem exibir mensagem
 set_default_options()
