@@ -144,13 +144,13 @@ def convert_video():
         messagebox.showerror("Erro", f"O arquivo '{output_file}' já existe e não pode ser sobrescrito.")
         return
 
-    command = f"\"{ffmpeg_path}\" -i \"{input_file}\""
+    command = f"\"{ffmpeg_path}\" -y -i \"{input_file}\""  # Adicionado '-y' para sobrescrever sem prompt
 
     if video_bitrate:
-        command += f" -b {video_bitrate}"
+        command += f" -b:v {video_bitrate}"  # Corrigido para '-b:v'
 
     if audio_bitrate:
-        command += f" -ab {audio_bitrate}"
+        command += f" -b:a {audio_bitrate}"  # Corrigido para '-b:a'
 
     if resolution != "original":
         command += f" -s {resolution}"
@@ -178,6 +178,7 @@ def convert_video():
     except subprocess.CalledProcessError as e:
         messagebox.showerror("Erro", f"Falha ao converter vídeo.\nErro: {e}")
 
+
 # Função para atualizar a exibição do comando FFmpeg
 def update_command_display():
     input_file = input_entry.get()
@@ -199,13 +200,13 @@ def update_command_display():
 
     output_file = os.path.join(output_dir, os.path.splitext(os.path.basename(input_file))[0] + '.' + output_format)
 
-    command = f"\"{ffmpeg_path}\" -i \"{input_file}\""
+    command = f"\"{ffmpeg_path}\" -y -i \"{input_file}\""  # Adicionado '-y' para sobrescrever sem prompt
 
     if video_bitrate:
-        command += f" -b {video_bitrate}"
+        command += f" -b:v {video_bitrate}"  # Corrigido para '-b:v'
 
     if audio_bitrate:
-        command += f" -ab {audio_bitrate}"
+        command += f" -b:a {audio_bitrate}"  # Corrigido para '-b:a'
 
     if resolution != "original":
         command += f" -s {resolution}"
@@ -242,7 +243,7 @@ def toggle_output_directory():
 
 # Função para exibir informações sobre o programa
 def show_about():
-    messagebox.showinfo("About", "Mauricio Menon(+AI) \nPython 3.10 + Tk \nVersão 5.04 \n06/08/2024")
+    messagebox.showinfo("About", "Mauricio Menon(+AI) \nPython 3.10 + Tk \nVersão 6.0.1 \n06/08/2024")
 
 # Criar janela principal
 root = tk.Tk()
