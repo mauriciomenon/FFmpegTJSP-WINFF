@@ -94,7 +94,7 @@ def select_output_directory():
 
 # Função para selecionar o executável do FFmpeg
 def select_ffmpeg_executable():
-    ffmpeg_path = filedialog.askopenfilename(filetypes=[("Executáveis", "*.exe"), ("Todos os arquivos", "*.*")], title="Selecione o executável do FFmpeg")
+    ffmpeg_path = filedialog.askopenfilename(filetypes=[("Executáveis", "*.exe"), ("Todos os arquivos", "*.*")], title="Selecione FFmpeg.exe")
     ffmpeg_path_entry.delete(0, tk.END)
     ffmpeg_path_entry.insert(0, ffmpeg_path)
     update_command_display()
@@ -152,10 +152,10 @@ def convert_video():
         command += f" -ac {audio_channels}"
 
     if video_codec != "auto":
-        command += f" -c:v {video_codec}"
+        command += f" -vcodec {video_codec}"
 
     if audio_codec != "auto":
-        command += f" -c:a {audio_codec}"
+        command += f" -acodec {audio_codec}"
 
     command += f" \"{output_file}\""
     
@@ -189,10 +189,10 @@ def update_command_display():
     command = f"\"{ffmpeg_path}\" -i \"{input_file}\""
 
     if video_bitrate:
-        command += f" -b:v {video_bitrate}"
+        command += f" -b {video_bitrate}"
 
     if audio_bitrate:
-        command += f" -b:a {audio_bitrate}"
+        command += f" -ab {audio_bitrate}"
 
     if resolution != "original":
         command += f" -s {resolution}"
@@ -207,10 +207,10 @@ def update_command_display():
         command += f" -ac {audio_channels}"
 
     if video_codec != "auto":
-        command += f" -c:v {video_codec}"
+        command += f" -vcodec {video_codec}"
 
     if audio_codec != "auto":
-        command += f" -c:a {audio_codec}"
+        command += f" -acodec {audio_codec}"
 
     command += f" \"{output_file}\""
     
@@ -230,7 +230,7 @@ def toggle_output_directory():
 # Criar janela principal
 root = tk.Tk()
 root.title("Conversor de Vídeo Avançado")
-root.geometry("800x600")  # Aumentar a largura da janela
+root.geometry("750x660")  # Ajustar o tamanho da janela
 
 # Entrada para o arquivo de vídeo
 tk.Label(root, text="Selecione o Arquivo de Vídeo:").grid(row=0, column=0, padx=10, pady=5)
@@ -313,26 +313,26 @@ ffmpeg_path_entry.grid(row=12, column=1, padx=10, pady=5)
 ffmpeg_path_entry.bind("<KeyRelease>", lambda event: update_command_display())
 tk.Button(root, text="Procurar", command=select_ffmpeg_executable).grid(row=12, column=2, padx=10, pady=5)
 
-# Caixa de texto para exibir o comando do FFmpeg
+# Caixa do comando do FFmpeg
 tk.Label(root, text="Comando FFmpeg:").grid(row=13, column=0, padx=10, pady=5, sticky="w")
-command_display = tk.Text(root, height=4, width=80)
+command_display = tk.Text(root, height=2, width=90, font=("TkDefaultFont", 9))
 command_display.grid(row=14, column=0, columnspan=3, padx=10, pady=5)
 
 # Botão para aplicar opções padrão
 default_button = tk.Button(root, text="Opções Padrão", command=set_default_options)
-default_button.grid(row=15, column=0, pady=20)
+default_button.grid(row=15, column=0, pady=10)
 
 # Botão para carregar opções salvas
 load_button = tk.Button(root, text="Carregar Configuração", command=load_config_from_file)
-load_button.grid(row=15, column=1, pady=20)
+load_button.grid(row=15, column=1, pady=10)
 
 # Botão para salvar configurações
 save_button = tk.Button(root, text="Salvar Configuração", command=save_config)
-save_button.grid(row=15, column=2, pady=20)
+save_button.grid(row=15, column=2, pady=10)
 
 # Botão para converter vídeo
-convert_button = tk.Button(root, text="Converter", command=convert_video)
-convert_button.grid(row=16, column=0, columnspan=3, pady=20)
+convert_button = tk.Button(root, text="Converter", command=convert_video, font=("TkDefaultFont", 10, "bold"))
+convert_button.grid(row=16, column=0, columnspan=3, pady=10, ipadx=10, ipady=5)
 
 # Aplicar configurações padrão no início, sem exibir mensagem
 set_default_options()
