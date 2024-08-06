@@ -37,7 +37,7 @@ def save_config():
 
 # Função para definir configurações padrão
 def set_default_options():
-    format_var.set("wmv")
+    format_var.set("wmv2")
     resolution_var.set("320x240")
     video_codec_var.set("wmv2")
     audio_codec_var.set("wmav2")
