@@ -30,14 +30,15 @@ def save_config():
             'audio_channels': audio_channels_var.get(),
             'use_same_directory': use_same_directory_var.get()
         }
-        config_file_path = f'{config_name}.ini'
+        config_file_path = os.path.join(os.getcwd(), f'{config_name}.ini')  # Salvar no diretório atual
         with open(config_file_path, 'w') as configfile:
             config.write(configfile)
-        messagebox.showinfo("Configuração", f"Configuração '{config_name}' salva com sucesso!")
+        messagebox.showinfo("Configuração", f"Configuração '{config_name}' salva com sucesso em {config_file_path}!")
+
 
 # Função para definir configurações padrão
 def set_default_options():
-    format_var.set("wmv2")
+    format_var.set("wmv")
     resolution_var.set("320x240")
     video_codec_var.set("wmv2")
     audio_codec_var.set("wmav2")
@@ -134,10 +135,10 @@ def convert_video():
     command = f"\"{ffmpeg_path}\" -i \"{input_file}\""
 
     if video_bitrate:
-        command += f" -b:v {video_bitrate}"
+        command += f" -b {video_bitrate}"
 
     if audio_bitrate:
-        command += f" -b:a {audio_bitrate}"
+        command += f" -ab {audio_bitrate}"
 
     if resolution != "original":
         command += f" -s {resolution}"
