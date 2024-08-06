@@ -316,7 +316,7 @@ tk.Button(root, text="Procurar", command=select_ffmpeg_executable).grid(row=12, 
 
 # Caixa do comando do FFmpeg
 tk.Label(root, text="Comando FFmpeg:").grid(row=13, column=0, padx=10, pady=5, sticky="w")
-command_display = tk.Text(root, height=2, width=90, font=("TkDefaultFont", 9))
+command_display = tk.Text(root, height=3, width=90, font=("TkDefaultFont", 9))
 command_display.grid(row=14, column=0, columnspan=3, padx=10, pady=5)
 
 # Botão para aplicar opções padrão
