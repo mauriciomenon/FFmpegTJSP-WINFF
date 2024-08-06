@@ -1,27 +1,80 @@
 import os
 import subprocess
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 import configparser
 
+# Inicializar o objeto de configuração
+config = configparser.ConfigParser()
+
 # Função para carregar configurações
-def load_config():
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-    return config
+def load_config(file_name):
+    config.read(file_name)
+    apply_saved_config()
 
 # Função para salvar configurações
 def save_config():
-    config['DEFAULT'] = {
-        'ffmpeg_path': ffmpeg_path_entry.get(),
-        'default_format': format_var.get(),
-        'default_output_dir': output_dir_entry.get(),
-        'default_video_codec': video_codec_var.get(),
-        'default_audio_codec': audio_codec_var.get(),
-        'use_same_directory': use_same_directory_var.get()
-    }
-    with open('config.ini', 'w') as configfile:
-        config.write(configfile)
+    config_name = simpledialog.askstring("Salvar Configuração", "Digite um nome para a configuração:")
+    if config_name:
+        config['DEFAULT'] = {
+            'ffmpeg_path': ffmpeg_path_entry.get(),
+            'default_format': format_var.get(),
+            'default_output_dir': output_dir_entry.get(),
+            'default_video_codec': video_codec_var.get(),
+            'default_audio_codec': audio_codec_var.get(),
+            'default_resolution': resolution_var.get(),
+            'video_bitrate': video_bitrate_entry.get(),
+            'audio_bitrate': audio_bitrate_entry.get(),
+            'frame_rate': frame_rate_entry.get(),
+            'audio_sample_rate': audio_sample_rate_entry.get(),
+            'audio_channels': audio_channels_var.get(),
+            'use_same_directory': use_same_directory_var.get()
+        }
+        config_file_path = f'{config_name}.ini'
+        with open(config_file_path, 'w') as configfile:
+            config.write(configfile)
+        messagebox.showinfo("Configuração", f"Configuração '{config_name}' salva com sucesso!")
+
+# Função para definir configurações padrão
+def set_default_options():
+    format_var.set("wmv")
+    resolution_var.set("320x240")
+    video_codec_var.set("wmv2")
+    audio_codec_var.set("wmav2")
+    video_bitrate_entry.delete(0, tk.END)
+    video_bitrate_entry.insert(0, "204800")
+    audio_bitrate_entry.delete(0, tk.END)
+    audio_bitrate_entry.insert(0, "65536")
+    frame_rate_entry.delete(0, tk.END)
+    frame_rate_entry.insert(0, "20")
+    audio_sample_rate_entry.delete(0, tk.END)
+    audio_sample_rate_entry.insert(0, "22050")
+    audio_channels_var.set("1")
+    output_dir_entry.delete(0, tk.END)
+    ffmpeg_path_entry.delete(0, tk.END)
+    use_same_directory_var.set(False)
+
+# Função para aplicar opções salvas
+def apply_saved_config():
+    ffmpeg_path_entry.delete(0, tk.END)
+    ffmpeg_path_entry.insert(0, config.get('DEFAULT', 'ffmpeg_path', fallback=''))
+    output_dir_entry.delete(0, tk.END)
+    output_dir_entry.insert(0, config.get('DEFAULT', 'default_output_dir', fallback=''))
+    format_var.set(config.get('DEFAULT', 'default_format', fallback='wmv'))
+    video_codec_var.set(config.get('DEFAULT', 'default_video_codec', fallback='wmv2'))
+    audio_codec_var.set(config.get('DEFAULT', 'default_audio_codec', fallback='wmav2'))
+    resolution_var.set(config.get('DEFAULT', 'default_resolution', fallback='320x240'))
+    video_bitrate_entry.delete(0, tk.END)
+    video_bitrate_entry.insert(0, config.get('DEFAULT', 'video_bitrate', fallback='204800'))
+    audio_bitrate_entry.delete(0, tk.END)
+    audio_bitrate_entry.insert(0, config.get('DEFAULT', 'audio_bitrate', fallback='65536'))
+    frame_rate_entry.delete(0, tk.END)
+    frame_rate_entry.insert(0, config.get('DEFAULT', 'frame_rate', fallback='20'))
+    audio_sample_rate_entry.delete(0, tk.END)
+    audio_sample_rate_entry.insert(0, config.get('DEFAULT', 'audio_sample_rate', fallback='22050'))
+    audio_channels_var.set(config.get('DEFAULT', 'audio_channels', fallback='1'))
+    use_same_directory_var.set(config.getboolean('DEFAULT', 'use_same_directory', fallback=False))
+    toggle_output_directory()
 
 # Função para selecionar arquivo de vídeo
 def select_file():
@@ -41,6 +94,13 @@ def select_ffmpeg_executable():
     ffmpeg_path_entry.delete(0, tk.END)
     ffmpeg_path_entry.insert(0, ffmpeg_path)
 
+# Função para carregar uma configuração
+def load_config_from_file():
+    config_file = filedialog.askopenfilename(title="Carregar Configuração", filetypes=[("Configurações", "*.ini")])
+    if config_file:
+        load_config(config_file)
+        messagebox.showinfo("Carregar Configuração", "Configuração carregada com sucesso!")
+
 # Função para converter vídeo
 def convert_video():
     input_file = input_entry.get()
@@ -50,6 +110,9 @@ def convert_video():
     resolution = resolution_var.get()
     video_codec = video_codec_var.get()
     audio_codec = audio_codec_var.get()
+    frame_rate = frame_rate_entry.get()
+    audio_sample_rate = audio_sample_rate_entry.get()
+    audio_channels = audio_channels_var.get()
     ffmpeg_path = ffmpeg_path_entry.get()
 
     if use_same_directory_var.get():
@@ -74,6 +137,15 @@ def convert_video():
     if resolution != "original":
         command += f" -s {resolution}"
 
+    if frame_rate:
+        command += f" -r {frame_rate}"
+
+    if audio_sample_rate:
+        command += f" -ar {audio_sample_rate}"
+
+    if audio_channels:
+        command += f" -ac {audio_channels}"
+
     if video_codec != "auto":
         command += f" -c:v {video_codec}"
 
@@ -86,7 +158,7 @@ def convert_video():
         subprocess.run(command, check=True, shell=True)
         messagebox.showinfo("Sucesso", f"Vídeo convertido para o formato {output_format} com sucesso!")
     except subprocess.CalledProcessError as e:
-        messagebox.showerror("Erro", f"Falha ao converter vídeo.\\nErro: {e}")
+        messagebox.showerror("Erro", f"Falha ao converter vídeo.\nErro: {e}")
 
 # Função para alternar a habilitação do campo de diretório de saída
 def toggle_output_directory():
@@ -96,9 +168,6 @@ def toggle_output_directory():
     else:
         output_dir_entry.config(state=tk.NORMAL)
         output_dir_button.config(state=tk.NORMAL)
-
-# Carregar configurações
-config = load_config()
 
 # Criar janela principal
 root = tk.Tk()
@@ -113,70 +182,89 @@ tk.Button(root, text="Procurar", command=select_file).grid(row=0, column=2, padx
 # Diretório de saída
 tk.Label(root, text="Selecione o Diretório de Saída:").grid(row=1, column=0, padx=10, pady=5)
 output_dir_entry = tk.Entry(root, width=50)
-output_dir_entry.insert(0, config.get('DEFAULT', 'default_output_dir', fallback=''))
 output_dir_entry.grid(row=1, column=1, padx=10, pady=5)
 output_dir_button = tk.Button(root, text="Procurar", command=select_output_directory)
 output_dir_button.grid(row=1, column=2, padx=10, pady=5)
 
 # Caixa de seleção para usar o mesmo diretório do arquivo de vídeo
-use_same_directory_var = tk.BooleanVar(value=config.getboolean('DEFAULT', 'use_same_directory', fallback=False))
+use_same_directory_var = tk.BooleanVar()
 use_same_directory_check = tk.Checkbutton(root, text="Usar o mesmo diretório do arquivo de vídeo", variable=use_same_directory_var, command=toggle_output_directory)
 use_same_directory_check.grid(row=2, column=0, columnspan=3, pady=5)
 
 # Formato de saída
 tk.Label(root, text="Selecione o Formato de Saída:").grid(row=3, column=0, padx=10, pady=5)
-format_var = tk.StringVar(value=config.get('DEFAULT', 'default_format', fallback='mp4'))
-format_options = ["mp4", "avi", "mkv", "flv", "mov", "mp3", "wma"]
-format_menu = tk.OptionMenu(root, format_var, *format_options)
+format_var = tk.StringVar()
+format_menu = tk.OptionMenu(root, format_var, "mp4", "avi", "mkv", "flv", "mov", "mp3", "wmv")
 format_menu.grid(row=3, column=1, padx=10, pady=5)
 
 # Bitrate de vídeo
-tk.Label(root, text="Bitrate de Vídeo (ex.: 1000k):").grid(row=4, column=0, padx=10, pady=5)
+tk.Label(root, text="Bitrate de Vídeo (ex.: 204800):").grid(row=4, column=0, padx=10, pady=5)
 video_bitrate_entry = tk.Entry(root, width=20)
 video_bitrate_entry.grid(row=4, column=1, padx=10, pady=5)
 
 # Bitrate de áudio
-tk.Label(root, text="Bitrate de Áudio (ex.: 128k):").grid(row=5, column=0, padx=10, pady=5)
+tk.Label(root, text="Bitrate de Áudio (ex.: 65536):").grid(row=5, column=0, padx=10, pady=5)
 audio_bitrate_entry = tk.Entry(root, width=20)
 audio_bitrate_entry.grid(row=5, column=1, padx=10, pady=5)
 
 # Resolução
 tk.Label(root, text="Selecione a Resolução:").grid(row=6, column=0, padx=10, pady=5)
-resolution_var = tk.StringVar(value="original")
-resolution_options = ["original", "1920x1080", "1280x720", "640x480"]
-resolution_menu = tk.OptionMenu(root, resolution_var, *resolution_options)
+resolution_var = tk.StringVar()
+resolution_menu = tk.OptionMenu(root, resolution_var, "original", "1920x1080", "1280x720", "640x480", "320x240")
 resolution_menu.grid(row=6, column=1, padx=10, pady=5)
 
 # Codec de vídeo
 tk.Label(root, text="Selecione o Codec de Vídeo:").grid(row=7, column=0, padx=10, pady=5)
-video_codec_var = tk.StringVar(value=config.get('DEFAULT', 'default_video_codec', fallback='auto'))
-video_codec_options = ["auto", "libx264", "libx265", "mpeg4"]
-video_codec_menu = tk.OptionMenu(root, video_codec_var, *video_codec_options)
+video_codec_var = tk.StringVar()
+video_codec_menu = tk.OptionMenu(root, video_codec_var, "auto", "libx264", "libx265", "mpeg4", "wmv2")
 video_codec_menu.grid(row=7, column=1, padx=10, pady=5)
 
 # Codec de áudio
 tk.Label(root, text="Selecione o Codec de Áudio:").grid(row=8, column=0, padx=10, pady=5)
-audio_codec_var = tk.StringVar(value=config.get('DEFAULT', 'default_audio_codec', fallback='auto'))
-audio_codec_options = ["auto", "aac", "mp3", "ac3", "wmav2"]
-audio_codec_menu = tk.OptionMenu(root, audio_codec_var, *audio_codec_options)
+audio_codec_var = tk.StringVar()
+audio_codec_menu = tk.OptionMenu(root, audio_codec_var, "auto", "aac", "mp3", "ac3", "wmav2")
 audio_codec_menu.grid(row=8, column=1, padx=10, pady=5)
 
+# Taxa de quadros
+tk.Label(root, text="Taxa de Quadros (ex.: 20):").grid(row=9, column=0, padx=10, pady=5)
+frame_rate_entry = tk.Entry(root, width=20)
+frame_rate_entry.grid(row=9, column=1, padx=10, pady=5)
+
+# Taxa de amostragem de áudio
+tk.Label(root, text="Taxa de Amostragem de Áudio (ex.: 22050):").grid(row=10, column=0, padx=10, pady=5)
+audio_sample_rate_entry = tk.Entry(root, width=20)
+audio_sample_rate_entry.grid(row=10, column=1, padx=10, pady=5)
+
+# Canais de áudio
+tk.Label(root, text="Canais de Áudio:").grid(row=11, column=0, padx=10, pady=5)
+audio_channels_var = tk.StringVar()
+audio_channels_menu = tk.OptionMenu(root, audio_channels_var, "1", "2")
+audio_channels_menu.grid(row=11, column=1, padx=10, pady=5)
+
 # Caminho do FFmpeg
-tk.Label(root, text="Caminho do Executável FFmpeg:").grid(row=9, column=0, padx=10, pady=5)
+tk.Label(root, text="Caminho do Executável FFmpeg:").grid(row=12, column=0, padx=10, pady=5)
 ffmpeg_path_entry = tk.Entry(root, width=50)
-ffmpeg_path_entry.insert(0, config.get('DEFAULT', 'ffmpeg_path', fallback='ffmpeg'))
-ffmpeg_path_entry.grid(row=9, column=1, padx=10, pady=5)
-tk.Button(root, text="Procurar", command=select_ffmpeg_executable).grid(row=9, column=2, padx=10, pady=5)
+ffmpeg_path_entry.grid(row=12, column=1, padx=10, pady=5)
+tk.Button(root, text="Procurar", command=select_ffmpeg_executable).grid(row=12, column=2, padx=10, pady=5)
+
+# Botão para aplicar opções padrão
+default_button = tk.Button(root, text="Opções Padrão", command=set_default_options)
+default_button.grid(row=13, column=0, pady=20)
+
+# Botão para carregar opções salvas
+load_button = tk.Button(root, text="Carregar Configuração", command=load_config_from_file)
+load_button.grid(row=13, column=1, pady=20)
+
+# Botão para salvar configurações
+save_button = tk.Button(root, text="Salvar Configuração", command=save_config)
+save_button.grid(row=13, column=2, pady=20)
 
 # Botão para converter vídeo
 convert_button = tk.Button(root, text="Converter", command=convert_video)
-convert_button.grid(row=11, column=0, columnspan=3, pady=20)
+convert_button.grid(row=14, column=0, columnspan=3, pady=20)
 
-# Configurar estado inicial do campo de diretório de saída
-toggle_output_directory()
-
-# Salvar configurações ao sair
-root.protocol("WM_DELETE_WINDOW", lambda: (save_config(), root.destroy()))
+# Aplicar configurações padrão no início, sem exibir mensagem
+set_default_options()
 
 # Executar o loop principal da interface
 root.mainloop()
