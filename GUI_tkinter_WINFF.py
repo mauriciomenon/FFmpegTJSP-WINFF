@@ -16,6 +16,12 @@ def load_config(file_name):
 def save_config():
     config_name = simpledialog.askstring("Salvar Configuração", "Digite um nome para a configuração:")
     if config_name:
+        # Selecionar diretório para salvar a configuração
+        directory = filedialog.askdirectory(initialdir=os.getcwd(), title="Selecione o diretório para salvar a configuração")
+        if not directory:
+            messagebox.showwarning("Atenção", "Nenhum diretório selecionado. Configuração não salva.")
+            return
+        
         config['DEFAULT'] = {
             'ffmpeg_path': ffmpeg_path_entry.get(),
             'default_format': format_var.get(),
@@ -28,13 +34,13 @@ def save_config():
             'frame_rate': frame_rate_entry.get(),
             'audio_sample_rate': audio_sample_rate_entry.get(),
             'audio_channels': audio_channels_var.get(),
-            'use_same_directory': use_same_directory_var.get()
+            'use_same_directory': use_same_directory_var.get(),
+            'overwrite_existing': overwrite_var.get()
         }
-        config_file_path = os.path.join(os.getcwd(), f'{config_name}.ini')  # Salvar no diretório atual
+        config_file_path = os.path.join(directory, f'{config_name}.ini')
         with open(config_file_path, 'w') as configfile:
             config.write(configfile)
         messagebox.showinfo("Configuração", f"Configuração '{config_name}' salva com sucesso em {config_file_path}!")
-
 
 # Função para definir configurações padrão
 def set_default_options():
@@ -54,6 +60,7 @@ def set_default_options():
     output_dir_entry.delete(0, tk.END)
     ffmpeg_path_entry.delete(0, tk.END)
     use_same_directory_var.set(False)
+    overwrite_var.set(True)
     update_command_display()
 
 # Função para aplicar opções salvas
@@ -76,6 +83,7 @@ def apply_saved_config():
     audio_sample_rate_entry.insert(0, config.get('DEFAULT', 'audio_sample_rate', fallback='22050'))
     audio_channels_var.set(config.get('DEFAULT', 'audio_channels', fallback='1'))
     use_same_directory_var.set(config.getboolean('DEFAULT', 'use_same_directory', fallback=False))
+    overwrite_var.set(config.getboolean('DEFAULT', 'overwrite_existing', fallback=True))
     toggle_output_directory()
     update_command_display()
 
@@ -131,6 +139,11 @@ def convert_video():
         return
 
     output_file = os.path.join(output_dir, os.path.splitext(os.path.basename(input_file))[0] + '.' + output_format)
+
+    # Verificar se o arquivo já existe e se deve sobrescrever
+    if not overwrite_var.get() and os.path.exists(output_file):
+        messagebox.showerror("Erro", f"O arquivo '{output_file}' já existe e não pode ser sobrescrito.")
+        return
 
     command = f"\"{ffmpeg_path}\" -i \"{input_file}\""
 
@@ -231,7 +244,7 @@ def toggle_output_directory():
 # Criar janela principal
 root = tk.Tk()
 root.title("Conversor de Vídeo Avançado")
-root.geometry("750x660")  # Ajustar o tamanho da janela
+root.geometry("750x700")  # Ajustar o tamanho da janela
 
 # Entrada para o arquivo de vídeo
 tk.Label(root, text="Selecione o Arquivo de Vídeo:").grid(row=0, column=0, padx=10, pady=5)
@@ -309,7 +322,7 @@ audio_channels_menu.grid(row=11, column=1, padx=10, pady=5)
 
 # Caminho do FFmpeg
 tk.Label(root, text="Caminho do Executável FFmpeg:").grid(row=12, column=0, padx=10, pady=5)
-ffmpeg_path_entry = tk.Entry(root, width=50)
+ffmpeg_path_entry = tk.Entry(root, width=70)  # Aumentar a largura da entrada
 ffmpeg_path_entry.grid(row=12, column=1, padx=10, pady=5)
 ffmpeg_path_entry.bind("<KeyRelease>", lambda event: update_command_display())
 tk.Button(root, text="Procurar", command=select_ffmpeg_executable).grid(row=12, column=2, padx=10, pady=5)
@@ -319,21 +332,29 @@ tk.Label(root, text="Comando FFmpeg:").grid(row=13, column=0, padx=10, pady=5, s
 command_display = tk.Text(root, height=3, width=90, font=("TkDefaultFont", 9))
 command_display.grid(row=14, column=0, columnspan=3, padx=10, pady=5)
 
+# Checkbox para sobrescrever arquivos
+overwrite_var = tk.BooleanVar()
+overwrite_check = tk.Checkbutton(root, text="Sobrescrever arquivos existentes", variable=overwrite_var)
+overwrite_check.grid(row=15, column=0, columnspan=3, pady=5)
+
 # Botão para aplicar opções padrão
 default_button = tk.Button(root, text="Opções Padrão", command=set_default_options)
-default_button.grid(row=15, column=0, pady=10)
+default_button.grid(row=16, column=0, pady=10)
 
 # Botão para carregar opções salvas
 load_button = tk.Button(root, text="Carregar Configuração", command=load_config_from_file)
-load_button.grid(row=15, column=1, pady=10)
+load_button.grid(row=16, column=1, pady=10)
 
 # Botão para salvar configurações
 save_button = tk.Button(root, text="Salvar Configuração", command=save_config)
-save_button.grid(row=15, column=2, pady=10)
+save_button.grid(row=16, column=2, pady=10)
 
 # Botão para converter vídeo
 convert_button = tk.Button(root, text="Converter", command=convert_video, font=("TkDefaultFont", 10, "bold"))
-convert_button.grid(row=16, column=0, columnspan=3, pady=10, ipadx=10, ipady=5)
+convert_button.grid(row=17, column=0, columnspan=3, pady=10, ipadx=10, ipady=5)
+
+# Caixa "About"
+tk.Label(root, text="Mauricio Menon (+AI)  Versão 5.04 06/08/2024", font=("TkDefaultFont", 8)).grid(row=18, column=0, padx=10, pady=5, sticky="w")
 
 # Aplicar configurações padrão no início, sem exibir mensagem
 set_default_options()
