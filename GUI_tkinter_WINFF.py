@@ -16,10 +16,10 @@ def load_config(file_name):
 def save_config():
     config_name = simpledialog.askstring("Salvar Configuração", "Digite um nome para a configuração:")
     if config_name:
-        # Selecionar diretório para salvar a configuração
-        directory = filedialog.askdirectory(initialdir=os.getcwd(), title="Selecione o diretório para salvar a configuração")
-        if not directory:
-            messagebox.showwarning("Atenção", "Nenhum diretório selecionado. Configuração não salva.")
+        # Selecionar arquivo para salvar a configuração usando explorador de arquivos
+        config_file_path = filedialog.asksaveasfilename(initialdir=os.getcwd(), title="Salvar Configuração", defaultextension=".ini", filetypes=[("Arquivos INI", "*.ini")])
+        if not config_file_path:
+            messagebox.showwarning("Atenção", "Nenhum arquivo selecionado. Configuração não salva.")
             return
         
         config['DEFAULT'] = {
@@ -37,7 +37,6 @@ def save_config():
             'use_same_directory': use_same_directory_var.get(),
             'overwrite_existing': overwrite_var.get()
         }
-        config_file_path = os.path.join(directory, f'{config_name}.ini')
         with open(config_file_path, 'w') as configfile:
             config.write(configfile)
         messagebox.showinfo("Configuração", f"Configuração '{config_name}' salva com sucesso em {config_file_path}!")
@@ -241,10 +240,14 @@ def toggle_output_directory():
         output_dir_button.config(state=tk.NORMAL)
     update_command_display()
 
+# Função para exibir informações sobre o programa
+def show_about():
+    messagebox.showinfo("About", "Mauricio Menon(+AI) \nPython 3.10 + Tk \nVersão 5.04 \n06/08/2024")
+
 # Criar janela principal
 root = tk.Tk()
 root.title("Conversor de Vídeo Avançado")
-root.geometry("750x700")  # Ajustar o tamanho da janela
+root.geometry("870x700")  # Ajustar o tamanho da janela
 
 # Entrada para o arquivo de vídeo
 tk.Label(root, text="Selecione o Arquivo de Vídeo:").grid(row=0, column=0, padx=10, pady=5)
@@ -263,8 +266,13 @@ output_dir_button.grid(row=1, column=2, padx=10, pady=5)
 
 # Caixa de seleção para usar o mesmo diretório do arquivo de vídeo
 use_same_directory_var = tk.BooleanVar()
-use_same_directory_check = tk.Checkbutton(root, text="Usar o mesmo diretório do arquivo de vídeo", variable=use_same_directory_var, command=toggle_output_directory)
-use_same_directory_check.grid(row=2, column=0, columnspan=3, pady=5)
+use_same_directory_check = tk.Checkbutton(root, text="Utilizar o mesmo diretório do arquivo de entrada", variable=use_same_directory_var, command=toggle_output_directory)
+use_same_directory_check.grid(row=2, column=0, pady=5)
+
+# Checkbox para sobrescrever arquivos
+overwrite_var = tk.BooleanVar()
+overwrite_check = tk.Checkbutton(root, text="Sobrescrever arquivos existentes", variable=overwrite_var)
+overwrite_check.grid(row=2, column=1, pady=5)
 
 # Formato de saída
 tk.Label(root, text="Selecione o Formato de Saída:").grid(row=3, column=0, padx=10, pady=5)
@@ -332,29 +340,25 @@ tk.Label(root, text="Comando FFmpeg:").grid(row=13, column=0, padx=10, pady=5, s
 command_display = tk.Text(root, height=3, width=90, font=("TkDefaultFont", 9))
 command_display.grid(row=14, column=0, columnspan=3, padx=10, pady=5)
 
-# Checkbox para sobrescrever arquivos
-overwrite_var = tk.BooleanVar()
-overwrite_check = tk.Checkbutton(root, text="Sobrescrever arquivos existentes", variable=overwrite_var)
-overwrite_check.grid(row=15, column=0, columnspan=3, pady=5)
-
 # Botão para aplicar opções padrão
 default_button = tk.Button(root, text="Opções Padrão", command=set_default_options)
-default_button.grid(row=16, column=0, pady=10)
+default_button.grid(row=15, column=0, pady=10)
 
 # Botão para carregar opções salvas
 load_button = tk.Button(root, text="Carregar Configuração", command=load_config_from_file)
-load_button.grid(row=16, column=1, pady=10)
+load_button.grid(row=15, column=1, pady=10)
 
 # Botão para salvar configurações
 save_button = tk.Button(root, text="Salvar Configuração", command=save_config)
-save_button.grid(row=16, column=2, pady=10)
+save_button.grid(row=15, column=2, pady=10)
 
 # Botão para converter vídeo
 convert_button = tk.Button(root, text="Converter", command=convert_video, font=("TkDefaultFont", 10, "bold"))
-convert_button.grid(row=17, column=0, columnspan=3, pady=10, ipadx=10, ipady=5)
+convert_button.grid(row=16, column=0, columnspan=3, pady=10, ipadx=10, ipady=5)
 
-# Caixa "About"
-tk.Label(root, text="Mauricio Menon (+AI)  Versão 5.04 06/08/2024", font=("TkDefaultFont", 8)).grid(row=18, column=0, padx=10, pady=5, sticky="w")
+# Botão "About"
+about_button = tk.Button(root, text="About", command=show_about, font=("TkDefaultFont", 8))
+about_button.grid(row=17, column=0, padx=10, pady=5, sticky="w")
 
 # Aplicar configurações padrão no início, sem exibir mensagem
 set_default_options()
