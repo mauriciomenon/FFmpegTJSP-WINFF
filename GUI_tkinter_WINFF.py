@@ -14,32 +14,30 @@ def load_config(file_name):
 
 # Função para salvar configurações
 def save_config():
-    config_name = simpledialog.askstring("Salvar Configuração", "Digite um nome para a configuração:")
-    if config_name:
-        # Selecionar arquivo para salvar a configuração usando explorador de arquivos
-        config_file_path = filedialog.asksaveasfilename(initialdir=os.getcwd(), title="Salvar Configuração", defaultextension=".ini", filetypes=[("Arquivos INI", "*.ini")])
-        if not config_file_path:
-            messagebox.showwarning("Atenção", "Nenhum arquivo selecionado. Configuração não salva.")
-            return
-        
-        config['DEFAULT'] = {
-            'ffmpeg_path': ffmpeg_path_entry.get(),
-            'default_format': format_var.get(),
-            'default_output_dir': output_dir_entry.get(),
-            'default_video_codec': video_codec_var.get(),
-            'default_audio_codec': audio_codec_var.get(),
-            'default_resolution': resolution_var.get(),
-            'video_bitrate': video_bitrate_entry.get(),
-            'audio_bitrate': audio_bitrate_entry.get(),
-            'frame_rate': frame_rate_entry.get(),
-            'audio_sample_rate': audio_sample_rate_entry.get(),
-            'audio_channels': audio_channels_var.get(),
-            'use_same_directory': use_same_directory_var.get(),
-            'overwrite_existing': overwrite_var.get()
-        }
-        with open(config_file_path, 'w') as configfile:
-            config.write(configfile)
-        messagebox.showinfo("Configuração", f"Configuração '{config_name}' salva com sucesso em {config_file_path}!")
+    # Selecionar arquivo para salvar a configuração usando explorador de arquivos
+    config_file_path = filedialog.asksaveasfilename(initialdir=os.getcwd(), title="Salvar Configuração", defaultextension=".ini", filetypes=[("Arquivos INI", "*.ini")])
+    if not config_file_path:
+        messagebox.showwarning("Atenção", "Nenhum arquivo selecionado. Configuração não salva.")
+        return
+    
+    config['DEFAULT'] = {
+        'ffmpeg_path': ffmpeg_path_entry.get(),
+        'default_format': format_var.get(),
+        'default_output_dir': output_dir_entry.get(),
+        'default_video_codec': video_codec_var.get(),
+        'default_audio_codec': audio_codec_var.get(),
+        'default_resolution': resolution_var.get(),
+        'video_bitrate': video_bitrate_entry.get(),
+        'audio_bitrate': audio_bitrate_entry.get(),
+        'frame_rate': frame_rate_entry.get(),
+        'audio_sample_rate': audio_sample_rate_entry.get(),
+        'audio_channels': audio_channels_var.get(),
+        'use_same_directory': use_same_directory_var.get(),
+        'overwrite_existing': overwrite_var.get()
+    }
+    with open(config_file_path, 'w') as configfile:
+        config.write(configfile)
+    messagebox.showinfo("Configuração", f"Configuração salva com sucesso em {config_file_path}.")
 
 # Função para definir configurações padrão
 def set_default_options():
