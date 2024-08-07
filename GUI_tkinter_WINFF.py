@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 import configparser
 import ffmpeg  # Biblioteca ffmpeg-python para extrair informações do vídeo
+import json
 
 # Inicializar o objeto de configuração
 config = configparser.ConfigParser()
@@ -248,7 +249,7 @@ def toggle_output_directory():
 
 # Função para exibir informações sobre o programa
 def show_about():
-    messagebox.showinfo("About", "Mauricio Menon (+AI) \nPython 3.10 + Tk \nVersão 6.0.1 \n06/08/2024")
+    messagebox.showinfo("About", "Mauricio Menon (+AI) \nPython 3.10 + Tk \nVersão 8.0.1 \n07/08/2024")
 
 # Função para exibir informações do arquivo de vídeo
 def show_video_info():
@@ -257,24 +258,85 @@ def show_video_info():
         messagebox.showwarning("Atenção", "Nenhum arquivo de vídeo selecionado.")
         return
 
-    ffmpeg_path = ffmpeg_path_entry.get()  # Use o caminho do executável FFmpeg
-    ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe.exe')  # Correto, adicionando a extensão .exe
-
+    ffmpeg_path = ffmpeg_path_entry.get()
+    ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe.exe')
 
     if not os.path.exists(ffprobe_path):
         messagebox.showerror("Erro", "Caminho do ffprobe não encontrado. Verifique se o caminho está correto.")
         return
 
     try:
-        # Construção do comando usando a biblioteca subprocess para maior controle
-        command = [ffprobe_path, '-v', 'error', '-show_entries', 'stream=codec_name,width,height,r_frame_rate,channels,sample_rate', '-of', 'default=noprint_wrappers=1', input_file]
+        command = [ffprobe_path, '-v', 'quiet', '-print_format', 'json', '-show_streams', '-show_format', input_file]
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = process.communicate()
         if process.returncode != 0:
             raise ffmpeg.Error('ffprobe', out, err)
-        
-        info_text = "Informações do Vídeo:\n" + out.decode('utf-8')
-        messagebox.showinfo("Informações do Vídeo", info_text)
+
+        info_data = json.loads(out)
+        info_text = f"Informações do Arquivo: {os.path.basename(input_file)}\n\n"
+        audio_count = 0
+        for stream in info_data.get('streams', []):
+            if stream['codec_type'] == 'video':
+                info_text += "Stream de Vídeo\n"
+                info_keys = ['codec_long_name', 'display_aspect_ratio', 'width', 'height', 'r_frame_rate']
+            elif stream['codec_type'] == 'audio':
+                audio_count += 1
+                info_text += f"Stream de Áudio {audio_count}\n"
+                info_keys = ['codec_long_name', 'channels', 'sample_rate', 'bit_rate']
+
+            for key in info_keys:
+                if key in stream:
+                    value = stream[key]
+                    if key == 'codec_long_name':
+                        description = "Codec"
+                    elif key == 'display_aspect_ratio':
+                        description = "Proporção de Exibição"
+                    elif key == 'width':
+                        description = "Largura"
+                        value = f"{value} pixels"
+                    elif key == 'height':
+                        description = "Altura"
+                        value = f"{value} pixels"
+                    elif key == 'channels':
+                        description = "Canais"
+                        value = f"{value} ({'mono' if value == '1' else 'stereo' if value == '2' else 'multi-channel'})"
+                    elif key == 'sample_rate':
+                        description = "Taxa de Amostragem"
+                        value += " Hz"
+                    elif key == 'r_frame_rate':
+                        description = "FPS"
+                    elif key == 'bit_rate':
+                        description = "Taxa de Bits"
+                        value = f"{int(value)/1000:.2f} kbps"
+                    info_text += f"{description}: {value}\n"
+            info_text += "\n"
+
+        if 'format' in info_data:
+            info_text += "Informações do Formato\n"
+            for key in ['format_name', 'duration', 'size', 'bit_rate']:
+                if key in info_data['format']:
+                    value = info_data['format'][key]
+                    if key == 'format_name':
+                        description = "Formato"
+                    elif key == 'duration':
+                        description = "Duração"
+                        value = f"{float(value):.2f} segundos"
+                    elif key == 'size':
+                        description = "Tamanho"
+                        value = f"{int(value)/1024/1024:.2f} MB"
+                    elif key == 'bit_rate':
+                        description = "Taxa de Bits"
+                        value = f"{int(value)/1000:.2f} kbps"
+                    info_text += f"{description}: {value}\n"
+
+        # Criação da janela de informações copiáveis
+        info_window = tk.Toplevel()
+        info_window.title("Informações Detalhadas do Vídeo")
+        text_widget = tk.Text(info_window, wrap='word', height=30, width=80)
+        text_widget.insert('end', info_text)
+        text_widget.pack(side='top', fill='both', expand=True)
+        text_widget.config(state='normal')  # Permite edição para facilitar a cópia
+        tk.Button(info_window, text="Fechar", command=info_window.destroy).pack(side='bottom')
     except Exception as e:
         messagebox.showerror("Erro", f"Não foi possível obter informações do vídeo.\nErro: {str(e)}")
 
@@ -282,7 +344,7 @@ def show_video_info():
 # Criar janela principal
 root = tk.Tk()
 root.title("Conversor de Vídeo Avançado")
-root.geometry("870x700")  # Ajustar o tamanho da janela
+root.geometry("870x720")  # Ajustar o tamanho da janela
 
 # Entrada para o arquivo de vídeo
 tk.Label(root, text="Selecione o Arquivo de Vídeo:").grid(row=0, column=0, padx=10, pady=5)
@@ -372,7 +434,7 @@ tk.Button(root, text="Procurar", command=select_ffmpeg_executable).grid(row=12, 
 
 # Caixa do comando do FFmpeg
 tk.Label(root, text="Comando FFmpeg:").grid(row=13, column=0, padx=10, pady=5, sticky="w")
-command_display = tk.Text(root, height=3, width=90, font=("TkDefaultFont", 9))
+command_display = tk.Text(root, height=4, width=90, font=("TkDefaultFont", 9))
 command_display.grid(row=14, column=0, columnspan=3, padx=10, pady=5)
 
 # Botão para aplicar opções padrão
@@ -396,7 +458,7 @@ about_button = tk.Button(root, text="About", command=show_about, font=("TkDefaul
 about_button.grid(row=17, column=0, padx=10, pady=5, sticky="w")
 
 # Botão "Info"
-info_button = tk.Button(root, text="Info", command=show_video_info, font=("TkDefaultFont", 8))
+info_button = tk.Button(root, text="Informações do video", command=show_video_info, font=("TkDefaultFont", 8))
 info_button.grid(row=17, column=2, padx=10, pady=5, sticky="e")
 
 # Aplicar configurações padrão no início, sem exibir mensagem
