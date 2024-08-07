@@ -3,9 +3,15 @@ import subprocess
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 import configparser
+import ffmpeg  # Biblioteca ffmpeg-python para extrair informações do vídeo
 
 # Inicializar o objeto de configuração
 config = configparser.ConfigParser()
+config_file = 'config.ini'
+
+# Carregar a configuração inicial se existir
+if os.path.exists(config_file):
+    config.read(config_file)
 
 # Função para carregar configurações
 def load_config(file_name):
@@ -14,12 +20,11 @@ def load_config(file_name):
 
 # Função para salvar configurações
 def save_config():
-    # Selecionar arquivo para salvar a configuração usando explorador de arquivos
     config_file_path = filedialog.asksaveasfilename(initialdir=os.getcwd(), title="Salvar Configuração", defaultextension=".ini", filetypes=[("Arquivos INI", "*.ini")])
     if not config_file_path:
         messagebox.showwarning("Atenção", "Nenhum arquivo selecionado. Configuração não salva.")
         return
-    
+
     config['DEFAULT'] = {
         'ffmpeg_path': ffmpeg_path_entry.get(),
         'default_format': format_var.get(),
@@ -103,6 +108,9 @@ def select_ffmpeg_executable():
     ffmpeg_path = filedialog.askopenfilename(filetypes=[("Executáveis", "*.exe"), ("Todos os arquivos", "*.*")], title="Selecione FFmpeg.exe")
     ffmpeg_path_entry.delete(0, tk.END)
     ffmpeg_path_entry.insert(0, ffmpeg_path)
+    config['DEFAULT']['ffmpeg_path'] = ffmpeg_path
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
     update_command_display()
 
 # Função para carregar uma configuração
@@ -142,13 +150,13 @@ def convert_video():
         messagebox.showerror("Erro", f"O arquivo '{output_file}' já existe e não pode ser sobrescrito.")
         return
 
-    command = f"\"{ffmpeg_path}\" -y -i \"{input_file}\""  # Adicionado '-y' para sobrescrever sem prompt
+    command = f"\"{ffmpeg_path}\" -y -i \"{input_file}\""
 
     if video_bitrate:
-        command += f" -b:v {video_bitrate}"  # Corrigido para '-b:v'
+        command += f" -b:v {video_bitrate}"
 
     if audio_bitrate:
-        command += f" -b:a {audio_bitrate}"  # Corrigido para '-b:a'
+        command += f" -b:a {audio_bitrate}"
 
     if resolution != "original":
         command += f" -s {resolution}"
@@ -176,7 +184,6 @@ def convert_video():
     except subprocess.CalledProcessError as e:
         messagebox.showerror("Erro", f"Falha ao converter vídeo.\nErro: {e}")
 
-
 # Função para atualizar a exibição do comando FFmpeg
 def update_command_display():
     input_file = input_entry.get()
@@ -198,13 +205,13 @@ def update_command_display():
 
     output_file = os.path.join(output_dir, os.path.splitext(os.path.basename(input_file))[0] + '.' + output_format)
 
-    command = f"\"{ffmpeg_path}\" -y -i \"{input_file}\""  # Adicionado '-y' para sobrescrever sem prompt
+    command = f"\"{ffmpeg_path}\" -y -i \"{input_file}\""
 
     if video_bitrate:
-        command += f" -b:v {video_bitrate}"  # Corrigido para '-b:v'
+        command += f" -b:v {video_bitrate}"
 
     if audio_bitrate:
-        command += f" -b:a {audio_bitrate}"  # Corrigido para '-b:a'
+        command += f" -b:a {audio_bitrate}"
 
     if resolution != "original":
         command += f" -s {resolution}"
@@ -241,7 +248,36 @@ def toggle_output_directory():
 
 # Função para exibir informações sobre o programa
 def show_about():
-    messagebox.showinfo("About", "Mauricio Menon(+AI) \nPython 3.10 + Tk \nVersão 6.0.1 \n06/08/2024")
+    messagebox.showinfo("About", "Mauricio Menon (+AI) \nPython 3.10 + Tk \nVersão 6.0.1 \n06/08/2024")
+
+# Função para exibir informações do arquivo de vídeo
+def show_video_info():
+    input_file = input_entry.get()
+    if not input_file:
+        messagebox.showwarning("Atenção", "Nenhum arquivo de vídeo selecionado.")
+        return
+
+    ffmpeg_path = ffmpeg_path_entry.get()  # Use o caminho do executável FFmpeg
+    ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe.exe')  # Correto, adicionando a extensão .exe
+
+
+    if not os.path.exists(ffprobe_path):
+        messagebox.showerror("Erro", "Caminho do ffprobe não encontrado. Verifique se o caminho está correto.")
+        return
+
+    try:
+        # Construção do comando usando a biblioteca subprocess para maior controle
+        command = [ffprobe_path, '-v', 'error', '-show_entries', 'stream=codec_name,width,height,r_frame_rate,channels,sample_rate', '-of', 'default=noprint_wrappers=1', input_file]
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        if process.returncode != 0:
+            raise ffmpeg.Error('ffprobe', out, err)
+        
+        info_text = "Informações do Vídeo:\n" + out.decode('utf-8')
+        messagebox.showinfo("Informações do Vídeo", info_text)
+    except Exception as e:
+        messagebox.showerror("Erro", f"Não foi possível obter informações do vídeo.\nErro: {str(e)}")
+
 
 # Criar janela principal
 root = tk.Tk()
@@ -358,6 +394,10 @@ convert_button.grid(row=16, column=0, columnspan=3, pady=10, ipadx=10, ipady=5)
 # Botão "About"
 about_button = tk.Button(root, text="About", command=show_about, font=("TkDefaultFont", 8))
 about_button.grid(row=17, column=0, padx=10, pady=5, sticky="w")
+
+# Botão "Info"
+info_button = tk.Button(root, text="Info", command=show_video_info, font=("TkDefaultFont", 8))
+info_button.grid(row=17, column=2, padx=10, pady=5, sticky="e")
 
 # Aplicar configurações padrão no início, sem exibir mensagem
 set_default_options()
