@@ -461,15 +461,15 @@ save_button = tk.Button(root, text="Salvar Configuração", command=save_config)
 save_button.grid(row=15, column=2, pady=10)
 
 # Botão para converter vídeo
-convert_button = tk.Button(root, text="Converter", command=convert_video, font=("TkDefaultFont", 10, "bold"))
+convert_button = tk.Button(root, text="Converter", command=convert_video, font=("TkDefaultFont", 11, "bold"))
 convert_button.grid(row=16, column=0, columnspan=3, pady=10, ipadx=10, ipady=5)
 
 # Botão "About"
-about_button = tk.Button(root, text="About", command=show_about, font=("TkDefaultFont", 8))
+about_button = tk.Button(root, text="About", command=show_about, font=("TkDefaultFont", 9))
 about_button.grid(row=17, column=0, padx=10, pady=5, sticky="w")
 
 # Botão "Info"
-info_button = tk.Button(root, text="Informações do video", command=show_video_info, font=("TkDefaultFont", 8))
+info_button = tk.Button(root, text="Informações do video", command=show_video_info, font=("TkDefaultFont", 9))
 info_button.grid(row=17, column=2, padx=10, pady=5, sticky="e")
 
 # Aplicar configurações padrão no início, sem exibir mensagem
