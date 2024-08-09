@@ -1,14 +1,10 @@
 import os
 import subprocess
 import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog
+from tkinter import filedialog, messagebox
 import configparser
-import ffmpeg  # Biblioteca ffmpeg-python para extrair informações do vídeo
 import json
-
-# Caminho padrao em subpasta bin para o ffmpeg      
-def get_default_ffmpeg_path():
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin', 'ffmpeg.exe')
+import platform
 
 # Inicializar o objeto de configuração
 config = configparser.ConfigParser()
@@ -17,11 +13,10 @@ config_file = 'config.ini'
 # Carregar a configuração inicial se existir
 if os.path.exists(config_file):
     config.read(config_file)
-else:
-    config['DEFAULT'] = {
-        'ffmpeg_path': get_default_ffmpeg_path(),
-        # Outros valores padrão podem ser definidos aqui
-    }
+
+def get_default_ffmpeg_path():
+    ffmpeg_name = 'ffmpeg.exe' if platform.system() == 'Windows' else 'ffmpeg'
+    return os.path.join(os.getcwd(), 'bin', ffmpeg_name)
 
 # Função para carregar configurações
 def load_config(file_name):
@@ -71,6 +66,7 @@ def set_default_options():
     audio_channels_var.set("1")
     output_dir_entry.delete(0, tk.END)
     ffmpeg_path_entry.delete(0, tk.END)
+    ffmpeg_path_entry.insert(0, get_default_ffmpeg_path())
     use_same_directory_var.set(False)
     overwrite_var.set(True)
     update_command_display()
@@ -78,7 +74,7 @@ def set_default_options():
 # Função para aplicar opções salvas
 def apply_saved_config():
     ffmpeg_path_entry.delete(0, tk.END)
-    ffmpeg_path_entry.insert(0, config.get('DEFAULT', 'ffmpeg_path', fallback=''))
+    ffmpeg_path_entry.insert(0, config.get('DEFAULT', 'ffmpeg_path', fallback=get_default_ffmpeg_path()))
     output_dir_entry.delete(0, tk.END)
     output_dir_entry.insert(0, config.get('DEFAULT', 'default_output_dir', fallback=''))
     format_var.set(config.get('DEFAULT', 'default_format', fallback='wmv'))
@@ -113,13 +109,10 @@ def select_output_directory():
     output_dir_entry.insert(0, directory)
     update_command_display()
 
-
 # Função para selecionar o executável do FFmpeg
 def select_ffmpeg_executable():
-    ffmpeg_path = filedialog.askopenfilename(filetypes=[("Executáveis", "*.exe"), ("Todos os arquivos", "*.*")], title="Selecione FFmpeg.exe")
-    if not ffmpeg_path:
-        # Use o caminho padrão se o usuário não selecionar nada
-        ffmpeg_path = get_default_ffmpeg_path()
+    filetypes = [("Todos os arquivos", "*.*")]
+    ffmpeg_path = filedialog.askopenfilename(filetypes=filetypes, title="Selecione FFmpeg")
     ffmpeg_path_entry.delete(0, tk.END)
     ffmpeg_path_entry.insert(0, ffmpeg_path)
     config['DEFAULT']['ffmpeg_path'] = ffmpeg_path
@@ -272,7 +265,7 @@ def show_video_info():
         return
 
     ffmpeg_path = ffmpeg_path_entry.get()
-    ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe.exe')
+    ffprobe_path = ffmpeg_path.replace('ffmpeg', 'ffprobe')
 
     if not os.path.exists(ffprobe_path):
         messagebox.showerror("Erro", "Caminho do ffprobe não encontrado. Verifique se o caminho está correto.")
@@ -352,12 +345,17 @@ def show_video_info():
         tk.Button(info_window, text="Fechar", command=info_window.destroy).pack(side='bottom')
     except Exception as e:
         messagebox.showerror("Erro", f"Não foi possível obter informações do vídeo.\nErro: {str(e)}")
-        
+
 
 # Criar janela principal
 root = tk.Tk()
 root.title("Conversor de Vídeo Avançado")
-root.geometry("870x720")  # Ajustar o tamanho da janela
+
+# Ajustar o tamanho da janela com base na plataforma
+if platform.system() == "Windows":
+    root.geometry("870x720")
+else:
+    root.geometry("870x600")  # Menor altura no macOS para ajustes
 
 # Entrada para o arquivo de vídeo
 tk.Label(root, text="Selecione o Arquivo de Vídeo:").grid(row=0, column=0, padx=10, pady=5)
