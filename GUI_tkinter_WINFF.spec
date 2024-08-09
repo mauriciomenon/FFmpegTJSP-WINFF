@@ -7,7 +7,8 @@ block_cipher = None
 a = Analysis(
     ['GUI_tkinter_WINFF.py'],
     pathex=[],
-    binaries=[],
+    binaries=[('C:\\Users\\menon\\Downloads\\ffmpeg-master-latest-win64-gpl\\bin\\ffmpeg.exe', 'bin/'),
+              ('C:\\Users\\menon\\Downloads\\ffmpeg-master-latest-win64-gpl\\bin\\ffprobe.exe', 'bin/')],
     datas=[],
     hiddenimports=[],
     hookspath=[],

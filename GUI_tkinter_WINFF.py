@@ -6,6 +6,10 @@ import configparser
 import ffmpeg  # Biblioteca ffmpeg-python para extrair informações do vídeo
 import json
 
+# Caminho padrao em subpasta bin para o ffmpeg      
+def get_default_ffmpeg_path():
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin', 'ffmpeg.exe')
+
 # Inicializar o objeto de configuração
 config = configparser.ConfigParser()
 config_file = 'config.ini'
@@ -13,6 +17,11 @@ config_file = 'config.ini'
 # Carregar a configuração inicial se existir
 if os.path.exists(config_file):
     config.read(config_file)
+else:
+    config['DEFAULT'] = {
+        'ffmpeg_path': get_default_ffmpeg_path(),
+        # Outros valores padrão podem ser definidos aqui
+    }
 
 # Função para carregar configurações
 def load_config(file_name):
@@ -104,9 +113,13 @@ def select_output_directory():
     output_dir_entry.insert(0, directory)
     update_command_display()
 
+
 # Função para selecionar o executável do FFmpeg
 def select_ffmpeg_executable():
     ffmpeg_path = filedialog.askopenfilename(filetypes=[("Executáveis", "*.exe"), ("Todos os arquivos", "*.*")], title="Selecione FFmpeg.exe")
+    if not ffmpeg_path:
+        # Use o caminho padrão se o usuário não selecionar nada
+        ffmpeg_path = get_default_ffmpeg_path()
     ffmpeg_path_entry.delete(0, tk.END)
     ffmpeg_path_entry.insert(0, ffmpeg_path)
     config['DEFAULT']['ffmpeg_path'] = ffmpeg_path
@@ -339,7 +352,7 @@ def show_video_info():
         tk.Button(info_window, text="Fechar", command=info_window.destroy).pack(side='bottom')
     except Exception as e:
         messagebox.showerror("Erro", f"Não foi possível obter informações do vídeo.\nErro: {str(e)}")
-
+        
 
 # Criar janela principal
 root = tk.Tk()
