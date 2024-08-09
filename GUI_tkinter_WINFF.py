@@ -1,7 +1,7 @@
 import os
 import subprocess
 import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog
+from tkinter import filedialog, messagebox
 import configparser
 import ffmpeg  # Biblioteca ffmpeg-python para extrair informações do vídeo
 import json
@@ -20,7 +20,7 @@ config_file = 'config.ini'
 if os.path.exists(config_file):
     config.read(config_file)
 else:
-    config['DEFAULT'] = {'ffmpeg_path': get_default_ffmpeg_path()}
+    config['DEFAULT']['ffmpeg_path'] = get_default_ffmpeg_path()
     with open(config_file, 'w') as configfile:
         config.write(configfile)
 
@@ -72,6 +72,7 @@ def set_default_options():
     audio_channels_var.set("1")
     output_dir_entry.delete(0, tk.END)
     ffmpeg_path_entry.delete(0, tk.END)
+    ffmpeg_path_entry.insert(0, get_default_ffmpeg_path())  # Define o caminho padrão na inicialização
     use_same_directory_var.set(False)
     overwrite_var.set(True)
     update_command_display()
@@ -116,7 +117,7 @@ def select_output_directory():
 
 # Função para selecionar o executável do FFmpeg
 def select_ffmpeg_executable():
-    ffmpeg_path = filedialog.askopenfilename(filetypes=[("Executáveis", "*.*")], title="Selecione FFmpeg")
+    ffmpeg_path = filedialog.askopenfilename(filetypes=[("Executáveis", "*.*")], title="Selecione o FFmpeg")
     ffmpeg_path_entry.delete(0, tk.END)
     ffmpeg_path_entry.insert(0, ffmpeg_path)
     config['DEFAULT']['ffmpeg_path'] = ffmpeg_path
@@ -259,7 +260,7 @@ def toggle_output_directory():
 
 # Função para exibir informações sobre o programa
 def show_about():
-    messagebox.showinfo("About", "Mauricio Menon (+AI) \nPython 3.10 + Tk \nVersão 8.0.1 \n07/08/2024")
+    messagebox.showinfo("About", "Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \nVersão 8.3.0 \n07/08/2024")
 
 # Função para exibir informações do arquivo de vídeo
 def show_video_info():
@@ -355,16 +356,15 @@ root = tk.Tk()
 root.title("Conversor de Vídeo Avançado")
 
 # Ajustar o tamanho da janela com base no sistema operacional
-if platform.system() == 'Windows':
+if platform.system() == "Windows":
     root.geometry("870x720")
 else:
-    root.geometry("870x680")
+    root.geometry("870x800")
 
-# Botão "About"
+# Botões de "About" e "Informações do video"
 about_button = tk.Button(root, text="About", command=show_about, font=("TkDefaultFont", 9))
 about_button.grid(row=0, column=0, padx=10, pady=5, sticky="w")
 
-# Botão "Info"
 info_button = tk.Button(root, text="Informações do video", command=show_video_info, font=("TkDefaultFont", 9))
 info_button.grid(row=0, column=2, padx=10, pady=5, sticky="e")
 
@@ -472,7 +472,7 @@ save_button = tk.Button(root, text="Salvar Configuração", command=save_config)
 save_button.grid(row=16, column=2, pady=10)
 
 # Botão para converter vídeo
-convert_button = tk.Button(root, text="  Converter  ", command=convert_video, font=("TkDefaultFont", 11, "bold"))
+convert_button = tk.Button(root, text="Converter", command=convert_video, font=("TkDefaultFont", 11, "bold"))
 convert_button.grid(row=17, column=0, columnspan=3, pady=10, ipadx=10, ipady=5)
 
 # Aplicar configurações padrão no início, sem exibir mensagem
