@@ -355,7 +355,7 @@ root.title("Conversor de Vídeo Avançado")
 if platform.system() == "Windows":
     root.geometry("870x720")
 else:
-    root.geometry("870x600")  # Menor altura no macOS para ajustes
+    root.geometry("870x800")  # Menor altura no macOS para ajustes
 
 # Entrada para o arquivo de vídeo
 tk.Label(root, text="Selecione o Arquivo de Vídeo:").grid(row=0, column=0, padx=10, pady=5)
