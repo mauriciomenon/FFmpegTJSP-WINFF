@@ -3,12 +3,11 @@ import subprocess
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import configparser
-import pyffmpeg  # Biblioteca ffmpeg-python para extrair informações do vídeo
 import json
 import threading
 import platform
 
-# Caminho padrão em subpasta bin para o ffmpeg      
+# Caminho padrão em subpasta bin para o ffmpeg
 def get_default_ffmpeg_path():
     executable_name = 'ffmpeg.exe' if platform.system() == 'Windows' else 'ffmpeg'
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin', executable_name)
@@ -138,7 +137,7 @@ def select_output_directory():
 
 # Função para selecionar o executável do FFmpeg
 def select_ffmpeg_executable():
-    ffmpeg_path = filedialog.askopenfilename(title="Selecione o Executável FFmpeg")
+    ffmpeg_path = filedialog.askopenfilename(title="Selecione o Executável FFmpeg", filetypes=[("Executáveis", "*.*")])
     ffmpeg_path_entry.delete(0, tk.END)
     ffmpeg_path_entry.insert(0, ffmpeg_path)
     config['DEFAULT']['ffmpeg_path'] = ffmpeg_path
@@ -211,7 +210,6 @@ def convert_videos():
 
             individual_progress['maximum'] = 100
             individual_progress['value'] = 0
-            progress_increment = 100 / total_files
 
             try:
                 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -221,7 +219,6 @@ def convert_videos():
                     if output == '' and process.poll() is not None:
                         break
                     if output:
-                        individual_progress['value'] += progress_increment
                         root.update_idletasks()
 
                 process.wait()
@@ -330,7 +327,7 @@ def show_video_info():
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = process.communicate()
         if process.returncode != 0:
-            raise ffmpeg.Error('ffprobe', out, err)
+            raise Exception(f'Erro ao executar ffprobe: {err}')
 
         info_data = json.loads(out)
         info_text = f"Informações do Arquivo: {os.path.basename(input_file)}\n\n"
@@ -410,130 +407,124 @@ if platform.system() == "Darwin":  # macOS
 else:  # Windows
     root.geometry("870x720")
 
-# Botão "About"
+# Botão "About" e "Info" na mesma linha
 about_button = tk.Button(root, text="About", command=show_about, font=("TkDefaultFont", 9))
-about_button.grid(row=0, column=0, padx=10, pady=5, sticky="w")
-
-# Botão "Info"
-info_button = tk.Button(root, text="Informações do video", command=show_video_info, font=("TkDefaultFont", 9))
-info_button.grid(row=0, column=2, padx=10, pady=5, sticky="e")
+about_button.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+info_button = tk.Button(root, text="Informações do vídeo", command=show_video_info, font=("TkDefaultFont", 9))
+info_button.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
 # Lista de arquivos
-tk.Label(root, text="Arquivos Selecionados:").grid(row=1, column=0, padx=10, pady=5)
-file_list = tk.Listbox(root, width=80, height=10, selectmode=tk.MULTIPLE)
-file_list.grid(row=1, column=1, padx=10, pady=5, columnspan=2)
+tk.Label(root, text="Arquivos Selecionados:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+file_list = tk.Listbox(root, width=80, height=8, selectmode=tk.MULTIPLE)
+file_list.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="we")
 
 # Botões para adicionar e remover arquivos
-tk.Button(root, text="Adicionar Arquivos", command=select_files).grid(row=2, column=1, padx=10, pady=5, sticky="e")
-tk.Button(root, text="Remover Arquivo", command=lambda: file_list.delete(tk.ANCHOR)).grid(row=2, column=2, padx=10, pady=5, sticky="w")
+add_button = tk.Button(root, text="Adicionar Arquivos", command=select_files)
+add_button.grid(row=2, column=2, padx=5, pady=5, sticky="e")
+remove_button = tk.Button(root, text="Remover Arquivo", command=lambda: file_list.delete(tk.ANCHOR))
+remove_button.grid(row=2, column=3, padx=5, pady=5, sticky="w")
 
 # Diretório de saída
-tk.Label(root, text="Selecione o Diretório de Saída:").grid(row=3, column=0, padx=10, pady=5)
-output_dir_entry = tk.Entry(root, width=50)
-output_dir_entry.grid(row=3, column=1, padx=10, pady=5)
-output_dir_entry.bind("<KeyRelease>", lambda event: update_command_display())
+tk.Label(root, text="Diretório de Saída:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
+output_dir_entry = tk.Entry(root, width=70)
+output_dir_entry.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="we")
 output_dir_button = tk.Button(root, text="Procurar", command=select_output_directory)
-output_dir_button.grid(row=3, column=2, padx=10, pady=5)
+output_dir_button.grid(row=3, column=3, padx=5, pady=5)
 
 # Caixa de seleção para usar o mesmo diretório do arquivo de vídeo
 use_same_directory_var = tk.BooleanVar()
-use_same_directory_check = tk.Checkbutton(root, text="Utilizar o mesmo diretório do arquivo de entrada", variable=use_same_directory_var, command=toggle_output_directory)
-use_same_directory_check.grid(row=4, column=0, pady=5)
+use_same_directory_check = tk.Checkbutton(root, text="Usar mesmo diretório do arquivo de entrada", variable=use_same_directory_var, command=toggle_output_directory)
+use_same_directory_check.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
 # Checkbox para sobrescrever arquivos
 overwrite_var = tk.BooleanVar()
 overwrite_check = tk.Checkbutton(root, text="Sobrescrever arquivos existentes", variable=overwrite_var)
-overwrite_check.grid(row=4, column=1, pady=5)
+overwrite_check.grid(row=4, column=2, columnspan=2, padx=5, pady=5, sticky="w")
 
 # Formato de saída
-tk.Label(root, text="Selecione o Formato de Saída:").grid(row=5, column=0, padx=10, pady=5)
+tk.Label(root, text="Formato de Saída:").grid(row=5, column=0, padx=5, pady=5, sticky="w")
 format_var = tk.StringVar()
-format_menu = tk.OptionMenu(root, format_var, "mp4", "avi", "mkv", "flv", "mov", "mp3", "wmv", command=lambda _: update_command_display())
-format_menu.grid(row=5, column=1, padx=10, pady=5)
+format_menu = tk.OptionMenu(root, format_var, "mp4", "avi", "mkv", "flv", "mov", "mp3", "wmv")
+format_menu.grid(row=5, column=1, padx=5, pady=5, sticky="w")
 
 # Bitrate de vídeo
-tk.Label(root, text="Bitrate de Vídeo (ex.: 204800):").grid(row=6, column=0, padx=10, pady=5)
+tk.Label(root, text="Bitrate de Vídeo (ex.: 204800):").grid(row=6, column=0, padx=5, pady=5, sticky="w")
 video_bitrate_entry = tk.Entry(root, width=20)
-video_bitrate_entry.grid(row=6, column=1, padx=10, pady=5)
-video_bitrate_entry.bind("<KeyRelease>", lambda event: update_command_display())
+video_bitrate_entry.grid(row=6, column=1, padx=5, pady=5, sticky="w")
 
 # Bitrate de áudio
-tk.Label(root, text="Bitrate de Áudio (ex.: 65536):").grid(row=7, column=0, padx=10, pady=5)
+tk.Label(root, text="Bitrate de Áudio (ex.: 65536):").grid(row=6, column=2, padx=5, pady=5, sticky="w")
 audio_bitrate_entry = tk.Entry(root, width=20)
-audio_bitrate_entry.grid(row=7, column=1, padx=10, pady=5)
-audio_bitrate_entry.bind("<KeyRelease>", lambda event: update_command_display())
+audio_bitrate_entry.grid(row=6, column=3, padx=5, pady=5, sticky="w")
 
 # Resolução
-tk.Label(root, text="Selecione a Resolução:").grid(row=8, column=0, padx=10, pady=5)
+tk.Label(root, text="Resolução:").grid(row=7, column=0, padx=5, pady=5, sticky="w")
 resolution_var = tk.StringVar()
-resolution_menu = tk.OptionMenu(root, resolution_var, "original", "1920x1080", "1280x720", "640x480", "320x240", command=lambda _: update_command_display())
-resolution_menu.grid(row=8, column=1, padx=10, pady=5)
+resolution_menu = tk.OptionMenu(root, resolution_var, "original", "1920x1080", "1280x720", "640x480", "320x240")
+resolution_menu.grid(row=7, column=1, padx=5, pady=5, sticky="w")
 
 # Codec de vídeo
-tk.Label(root, text="Selecione o Codec de Vídeo:").grid(row=9, column=0, padx=10, pady=5)
+tk.Label(root, text="Codec de Vídeo:").grid(row=7, column=2, padx=5, pady=5, sticky="w")
 video_codec_var = tk.StringVar()
-video_codec_menu = tk.OptionMenu(root, video_codec_var, "auto", "libx264", "libx265", "mpeg4", "wmv2", command=lambda _: update_command_display())
-video_codec_menu.grid(row=9, column=1, padx=10, pady=5)
+video_codec_menu = tk.OptionMenu(root, video_codec_var, "auto", "libx264", "libx265", "mpeg4", "wmv2")
+video_codec_menu.grid(row=7, column=3, padx=5, pady=5, sticky="w")
 
 # Codec de áudio
-tk.Label(root, text="Selecione o Codec de Áudio:").grid(row=10, column=0, padx=10, pady=5)
+tk.Label(root, text="Codec de Áudio:").grid(row=8, column=0, padx=5, pady=5, sticky="w")
 audio_codec_var = tk.StringVar()
-audio_codec_menu = tk.OptionMenu(root, audio_codec_var, "auto", "aac", "mp3", "ac3", "wmav2", command=lambda _: update_command_display())
-audio_codec_menu.grid(row=10, column=1, padx=10, pady=5)
+audio_codec_menu = tk.OptionMenu(root, audio_codec_var, "auto", "aac", "mp3", "ac3", "wmav2")
+audio_codec_menu.grid(row=8, column=1, padx=5, pady=5, sticky="w")
 
 # Taxa de quadros
-tk.Label(root, text="Taxa de Quadros (ex.: 20):").grid(row=11, column=0, padx=10, pady=5)
+tk.Label(root, text="Taxa de Quadros (ex.: 20):").grid(row=8, column=2, padx=5, pady=5, sticky="w")
 frame_rate_entry = tk.Entry(root, width=20)
-frame_rate_entry.grid(row=11, column=1, padx=10, pady=5)
-frame_rate_entry.bind("<KeyRelease>", lambda event: update_command_display())
+frame_rate_entry.grid(row=8, column=3, padx=5, pady=5, sticky="w")
 
 # Taxa de amostragem de áudio
-tk.Label(root, text="Taxa de Amostragem de Áudio (ex.: 22050):").grid(row=12, column=0, padx=10, pady=5)
+tk.Label(root, text="Taxa de Amostragem de Áudio (ex.: 22050):").grid(row=9, column=0, padx=5, pady=5, sticky="w")
 audio_sample_rate_entry = tk.Entry(root, width=20)
-audio_sample_rate_entry.grid(row=12, column=1, padx=10, pady=5)
-audio_sample_rate_entry.bind("<KeyRelease>", lambda event: update_command_display())
+audio_sample_rate_entry.grid(row=9, column=1, padx=5, pady=5, sticky="w")
 
 # Canais de áudio
-tk.Label(root, text="Canais de Áudio:").grid(row=13, column=0, padx=10, pady=5)
+tk.Label(root, text="Canais de Áudio:").grid(row=9, column=2, padx=5, pady=5, sticky="w")
 audio_channels_var = tk.StringVar()
-audio_channels_menu = tk.OptionMenu(root, audio_channels_var, "1", "2", command=lambda _: update_command_display())
-audio_channels_menu.grid(row=13, column=1, padx=10, pady=5)
+audio_channels_menu = tk.OptionMenu(root, audio_channels_var, "1", "2")
+audio_channels_menu.grid(row=9, column=3, padx=5, pady=5, sticky="w")
 
 # Caminho do FFmpeg
-tk.Label(root, text="Caminho do Executável FFmpeg:").grid(row=14, column=0, padx=10, pady=5)
-ffmpeg_path_entry = tk.Entry(root, width=70)  # Aumentar a largura da entrada
-ffmpeg_path_entry.grid(row=14, column=1, padx=10, pady=5)
-ffmpeg_path_entry.bind("<KeyRelease>", lambda event: update_command_display())
-tk.Button(root, text="Procurar", command=select_ffmpeg_executable).grid(row=14, column=2, padx=10, pady=5)
+tk.Label(root, text="Caminho do FFmpeg:").grid(row=10, column=0, padx=5, pady=5, sticky="w")
+ffmpeg_path_entry = tk.Entry(root, width=70)
+ffmpeg_path_entry.grid(row=10, column=1, columnspan=2, padx=5, pady=5, sticky="we")
+tk.Button(root, text="Procurar", command=select_ffmpeg_executable).grid(row=10, column=3, padx=5, pady=5)
 
 # Caixa do comando do FFmpeg
-tk.Label(root, text="Comando FFmpeg:").grid(row=15, column=0, padx=10, pady=5, sticky="w")
-command_display = tk.Text(root, height=4, width=90, font=("TkDefaultFont", 9))
-command_display.grid(row=15, column=1, columnspan=2, padx=10, pady=5)
+tk.Label(root, text="Comando FFmpeg:").grid(row=11, column=0, padx=5, pady=5, sticky="nw")
+command_display = tk.Text(root, height=4, width=70, font=("TkDefaultFont", 9))
+command_display.grid(row=11, column=1, columnspan=3, padx=5, pady=5, sticky="we")
 
 # Barra de progresso total
-total_progress = ttk.Progressbar(root, orient="horizontal", length=400, mode="determinate")
-total_progress.grid(row=16, column=0, columnspan=1, padx=10, pady=5)
+total_progress = ttk.Progressbar(root, orient="horizontal", mode="determinate")
+total_progress.grid(row=12, column=0, columnspan=2, padx=5, pady=5, sticky="we")
 
 # Barra de progresso individual
-individual_progress = ttk.Progressbar(root, orient="horizontal", length=400, mode="determinate")
-individual_progress.grid(row=16, column=1, columnspan=1, padx=10, pady=5)
+individual_progress = ttk.Progressbar(root, orient="horizontal", mode="determinate")
+individual_progress.grid(row=12, column=2, columnspan=2, padx=5, pady=5, sticky="we")
 
 # Botão para aplicar opções padrão
 default_button = tk.Button(root, text="Opções Padrão", command=set_default_options)
-default_button.grid(row=17, column=0, pady=10)
+default_button.grid(row=13, column=0, padx=5, pady=5, sticky="we")
 
 # Botão para carregar opções salvas
 load_button = tk.Button(root, text="Carregar Configuração", command=load_config_from_file)
-load_button.grid(row=17, column=1, pady=10)
+load_button.grid(row=13, column=1, padx=5, pady=5, sticky="we")
 
 # Botão para salvar configurações
 save_button = tk.Button(root, text="Salvar Configuração", command=save_config)
-save_button.grid(row=17, column=2, pady=10)
+save_button.grid(row=13, column=2, padx=5, pady=5, sticky="we")
 
 # Botão para converter vídeos
 convert_button = tk.Button(root, text="Converter", command=convert_videos, font=("TkDefaultFont", 11, "bold"))
-convert_button.grid(row=18, column=0, columnspan=3, pady=10, ipadx=10, ipady=5)
+convert_button.grid(row=13, column=3, padx=5, pady=5, sticky="we")
 
 # Aplicar configurações padrão no início, sem exibir mensagem
 set_default_options()
