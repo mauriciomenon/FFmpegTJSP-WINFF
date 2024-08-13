@@ -405,13 +405,19 @@ root.title("Conversor de Vídeo Avançado")
 if platform.system() == "Darwin":  # macOS
     root.geometry("1200x850")
 else:  # Windows
-    root.geometry("870x720")
+    root.geometry("820x650")
 
 # Botão "About" e "Info" na mesma linha
-about_button = tk.Button(root, text="About", command=show_about, font=("TkDefaultFont", 9))
-about_button.grid(row=0, column=0, padx=5, pady=5, sticky="w")
-info_button = tk.Button(root, text="Informações do vídeo", command=show_video_info, font=("TkDefaultFont", 9))
-info_button.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+#about_button = tk.Button(root, text="About", command=show_about, font=("TkDefaultFont", 9))
+#about_button.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+#info_button = tk.Button(root, text="Informações do vídeo", command=show_video_info, font=("TkDefaultFont", 9))
+#info_button.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+# Botão "About" e "Info" na mesma linha
+about_button = tk.Button(root, text="Sobre o Programa", command=show_about, font=("TkDefaultFont", 9))
+about_button.grid(row=1, column=2, padx=5, pady=5, sticky="e")
+info_button = tk.Button(root, text="Codecs do vídeo", command=show_video_info, font=("TkDefaultFont", 9))
+info_button.grid(row=1, column=3, padx=5, pady=5, sticky="w")
 
 # Lista de arquivos
 tk.Label(root, text="Arquivos Selecionados:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
