@@ -405,37 +405,58 @@ root.title("Conversor de Vídeo Avançado")
 if platform.system() == "Darwin":  # macOS
     root.geometry("1200x850")
 else:  # Windows
-    root.geometry("820x650")
+    root.geometry("830x670")
 
-# Botão "About" e "Info" na mesma linha
-#about_button = tk.Button(root, text="About", command=show_about, font=("TkDefaultFont", 9))
-#about_button.grid(row=0, column=0, padx=5, pady=5, sticky="w")
-#info_button = tk.Button(root, text="Informações do vídeo", command=show_video_info, font=("TkDefaultFont", 9))
-#info_button.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+# Frame para botões superiores
+top_button_frame = tk.Frame(root)
+top_button_frame.grid(row=0, column=0, columnspan=4, padx=5, pady=5, sticky="we")
 
-# Botão "About" e "Info" na mesma linha
-about_button = tk.Button(root, text="Sobre o Programa", command=show_about, font=("TkDefaultFont", 9))
-about_button.grid(row=1, column=2, padx=5, pady=5, sticky="e")
-info_button = tk.Button(root, text="Codecs do vídeo", command=show_video_info, font=("TkDefaultFont", 9))
-info_button.grid(row=1, column=3, padx=5, pady=5, sticky="w")
+# Botões "Sobre o Programa" e "Codecs do vídeo"
+about_button = tk.Button(top_button_frame, text="Sobre o Programa", command=show_about, font=("TkDefaultFont", 9))
+about_button.pack(side="left", padx=5)
+info_button = tk.Button(top_button_frame, text="Codecs do vídeo", command=show_video_info, font=("TkDefaultFont", 9))
+info_button.pack(side="left", padx=5)
 
-# Lista de arquivos
+# Label para arquivos selecionados
 tk.Label(root, text="Arquivos Selecionados:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
-file_list = tk.Listbox(root, width=80, height=8, selectmode=tk.MULTIPLE)
-file_list.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky="we")
+
+# Frame para conter a listbox e a scrollbar
+listbox_frame = tk.Frame(root)
+listbox_frame.grid(row=2, column=0, columnspan=4, padx=5, pady=5, sticky="nswe")
+
+# Criar uma scrollbar
+scrollbar = tk.Scrollbar(listbox_frame, orient="vertical")
+
+# Listbox com scrollbar
+file_list = tk.Listbox(listbox_frame, width=80, height=8, selectmode=tk.MULTIPLE, yscrollcommand=scrollbar.set)
+file_list.pack(side="left", fill="both", expand=True)
+
+# Configurar a scrollbar
+scrollbar.config(command=file_list.yview)
+scrollbar.pack(side="right", fill="y")
+
+# Frame para botões de adicionar e remover
+file_button_frame = tk.Frame(root)
+file_button_frame.grid(row=3, column=0, columnspan=4, padx=5, pady=5, sticky="we")
 
 # Botões para adicionar e remover arquivos
-add_button = tk.Button(root, text="Adicionar Arquivos", command=select_files)
-add_button.grid(row=2, column=2, padx=5, pady=5, sticky="e")
-remove_button = tk.Button(root, text="Remover Arquivo", command=lambda: file_list.delete(tk.ANCHOR))
-remove_button.grid(row=2, column=3, padx=5, pady=5, sticky="w")
+add_button = tk.Button(file_button_frame, text="Adicionar Arquivos", command=select_files)
+add_button.pack(side="left", padx=5)
+remove_button = tk.Button(file_button_frame, text="Remover Arquivo", command=lambda: file_list.delete(tk.ANCHOR))
+remove_button.pack(side="left", padx=5)
+
+# Frame para diretório de saída
+output_frame = tk.Frame(root)
+output_frame.grid(row=4, column=0, columnspan=4, padx=5, pady=5, sticky="we")
 
 # Diretório de saída
-tk.Label(root, text="Diretório de Saída:").grid(row=3, column=0, padx=5, pady=5, sticky="w")
-output_dir_entry = tk.Entry(root, width=70)
-output_dir_entry.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="we")
-output_dir_button = tk.Button(root, text="Procurar", command=select_output_directory)
-output_dir_button.grid(row=3, column=3, padx=5, pady=5)
+tk.Label(output_frame, text="Diretório de Saída:").pack(side="left", padx=5)
+output_dir_entry = tk.Entry(output_frame, width=70)
+output_dir_entry.pack(side="left", expand=True, fill="x", padx=5)
+output_dir_button = tk.Button(output_frame, text="Procurar", command=select_output_directory)
+output_dir_button.pack(side="left", padx=5)
+
+
 
 # Caixa de seleção para usar o mesmo diretório do arquivo de vídeo
 use_same_directory_var = tk.BooleanVar()
