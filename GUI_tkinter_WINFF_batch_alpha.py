@@ -6,6 +6,10 @@ import configparser
 import json
 import threading
 import platform
+import requests
+import zipfile
+import shutil
+import tempfile
 
 # Caminho padrão em subpasta bin para o ffmpeg
 def get_default_ffmpeg_path():
@@ -145,12 +149,62 @@ def select_ffmpeg_executable():
         config.write(configfile)
     update_command_display()
 
-# Função para carregar uma configuração
-def load_config_from_file():
-    config_file = filedialog.askopenfilename(title="Carregar Configuração", filetypes=[("Configurações", "*.ini")])
-    if config_file:
-        load_config(config_file)
-        messagebox.showinfo("Carregar Configuração", "Configuração carregada com sucesso!")
+
+def download_ffmpeg():
+    download_url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+    dest_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin')
+
+    # Verificar se a pasta bin já existe
+    if os.path.exists(dest_folder):
+        messagebox.showinfo("Informação", "A pasta 'bin' já existe. FFmpeg e ffprobe podem já estar disponíveis.")
+        return
+
+    try:
+        # Criar a janela de "Instalando, aguarde..."
+        installing_window = show_installing_window(dest_folder)
+
+        # Criar um diretório temporário para o download
+        temp_dir = tempfile.mkdtemp()
+        zip_path = os.path.join(temp_dir, "ffmpeg.zip")
+
+        # Baixar o arquivo zip
+        response = requests.get(download_url, stream=True)
+        with open(zip_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+        
+        # Extrair o conteúdo do zip
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(temp_dir)
+
+        # Caminho para a pasta interna dentro do ZIP
+        internal_bin_path = os.path.join(temp_dir, "ffmpeg-master-latest-win64-gpl", "bin")
+
+        # Criar a pasta /bin no diretório do programa, se não existir
+        os.makedirs(dest_folder, exist_ok=True)
+
+        # Mover o conteúdo da pasta interna /bin para a pasta /bin do programa
+        for item in os.listdir(internal_bin_path):
+            s = os.path.join(internal_bin_path, item)
+            d = os.path.join(dest_folder, item)
+            shutil.move(s, d)
+
+        messagebox.showinfo("Sucesso", f"FFmpeg e ffprobe foram baixados e instalados com sucesso em {dest_folder}.")
+    
+    except Exception as e:
+        messagebox.showerror("Erro", f"Erro ao baixar ou instalar FFmpeg: {e}")
+    
+    finally:
+        # Limpar o diretório temporário
+        shutil.rmtree(temp_dir)
+        
+        # Fechar a janela de instalação
+        installing_window.destroy()
+
+def start_download_ffmpeg():
+    download_thread = threading.Thread(target=download_ffmpeg)
+    download_thread.start()
 
 # Função para converter vídeos em lote
 def convert_videos():
@@ -312,6 +366,7 @@ def toggle_output_directory():
 def show_about():
     messagebox.showinfo("About", "Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \nVersão 8.3.0 \n07/08/2024")
 
+# Função para exibir informações do arquivo de vídeo# Função para exibir informações do arquivo de vídeo
 # Função para exibir informações do arquivo de vídeo
 def show_video_info():
     files = file_list.get(0, tk.END)
@@ -328,6 +383,11 @@ def show_video_info():
 
     info_window = tk.Toplevel()
     info_window.title("Informações Detalhadas dos Vídeos")
+
+    # Ajustar a largura da janela secundária para ser igual à do programa principal
+    window_width = root.winfo_width()
+    info_window.geometry(f"{window_width}x500")  # 500 é um exemplo de altura
+
     notebook = ttk.Notebook(info_window)
     notebook.pack(fill='both', expand=True)
 
@@ -394,13 +454,40 @@ def show_video_info():
                             value = f"{int(value)/1000:.2f} kbps"
                         info_text += f"{description}: {value}\n"
 
-            text_widget = tk.Text(notebook, wrap='word', height=20, width=60)  # Ajuste para várias linhas e largura menor
+            # Frame para conter o texto e a scrollbar
+            frame = tk.Frame(notebook)
+            frame.pack(fill='both', expand=True)
+
+            # Adicionar um widget de texto com rolagem automática
+            text_widget = tk.Text(frame, wrap='word', height=20, width=60)  # Wrap habilitado para quebrar linhas
             text_widget.insert('end', info_text)
             text_widget.config(state='normal')  # Permite edição para facilitar a cópia
-            notebook.add(text_widget, text=os.path.basename(input_file))
+            text_widget.pack(side='left', fill='both', expand=True)
+
+            # Adicionar scrollbar
+            scrollbar = tk.Scrollbar(frame, orient='vertical', command=text_widget.yview)
+            text_widget.config(yscrollcommand=scrollbar.set)
+            scrollbar.pack(side='right', fill='y')
+
+            notebook.add(frame, text=os.path.basename(input_file))
 
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível obter informações do vídeo {input_file}.\nErro: {str(e)}")
+            
+def show_installing_window(install_path):
+    installing_window = tk.Toplevel(root)
+    installing_window.title("Instalação em Andamento")
+    installing_window.geometry("400x120")
+    installing_window.resizable(False, False)
+    
+    tk.Label(installing_window, text="Instalando FFmpeg, por favor aguarde...").pack(pady=10)
+    tk.Label(installing_window, text=f"Instalando em: {install_path}").pack(pady=5)
+    
+    # Bloquear interação com a janela principal
+    installing_window.transient(root)
+    installing_window.grab_set()
+
+    return installing_window
 
 # Criar janela principal
 root = tk.Tk()
@@ -421,6 +508,8 @@ about_button = tk.Button(top_button_frame, text="Sobre o Programa", command=show
 about_button.pack(side="left", padx=5)
 info_button = tk.Button(top_button_frame, text="Codecs do vídeo", command=show_video_info, font=("TkDefaultFont", 9))
 info_button.pack(side="left", padx=5)
+download_button = tk.Button(top_button_frame, text="Baixar FFmpeg", command=start_download_ffmpeg, font=("TkDefaultFont", 9))
+download_button.pack(side="left", padx=5)
 
 # Label para arquivos selecionados
 tk.Label(root, text="Arquivos Selecionados:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
