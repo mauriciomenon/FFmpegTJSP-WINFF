@@ -41,5 +41,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['camera.ico'],
+    icon=['C:\\Users\\menon\\git\\aulascomad\\WinFF\\camera.ico'],
 )
