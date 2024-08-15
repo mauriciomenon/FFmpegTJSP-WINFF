@@ -10,11 +10,20 @@ import requests
 import zipfile
 import shutil
 import tempfile
+import sys
 
 # Caminho padrão em subpasta bin para o ffmpeg
 def get_default_ffmpeg_path():
+    if getattr(sys, 'frozen', False):  # Verifica se o programa está empacotado pelo PyInstaller
+        # Se empacotado, use o diretório _MEIPASS para localizar a pasta bin
+        base_path = os.path.join(sys._MEIPASS, 'bin')
+    else:
+        # Se não empacotado, usa a localização do script Python
+        base_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin')
+    
     executable_name = 'ffmpeg.exe' if platform.system() == 'Windows' else 'ffmpeg'
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin', executable_name)
+    return os.path.join(base_path, executable_name)
+
 
 # Inicializar o objeto de configuração
 config = configparser.ConfigParser()
