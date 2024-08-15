@@ -76,7 +76,7 @@ def save_config():
         config.write(configfile)
     messagebox.showinfo("Configuração", f"Configuração salva com sucesso em {config_file_path}.")
 
-# Função para carregar uma configuração de arquivo
+# Função para carregar uma configuração
 def load_config_from_file():
     config_file = filedialog.askopenfilename(title="Carregar Configuração", filetypes=[("Configurações", "*.ini")])
     if config_file:
@@ -162,24 +162,32 @@ def download_ffmpeg():
 
     # Verificar se a pasta bin já existe
     if os.path.exists(dest_folder):
-        messagebox.showinfo("Informação", "A pasta 'bin' já existe. FFmpeg e ffprobe podem já estar disponíveis.")
-        return
+        result = messagebox.askyesno("Confirmação", "A pasta 'bin' já existe. Deseja continuar com o download e sobrescrever os arquivos?")
+        if not result:
+            return
 
     try:
         # Criar a janela de "Instalando, aguarde..."
-        installing_window = show_installing_window(dest_folder)
+        installing_window, progress_bar = show_installing_window(dest_folder)
 
         # Criar um diretório temporário para o download
         temp_dir = tempfile.mkdtemp()
         zip_path = os.path.join(temp_dir, "ffmpeg.zip")
 
-        # Baixar o arquivo zip
+        # Baixar o arquivo zip com acompanhamento de progresso
         response = requests.get(download_url, stream=True)
+        total_length = int(response.headers.get('content-length', 0))
+        downloaded = 0
+
         with open(zip_path, 'wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
                 if chunk:
                     f.write(chunk)
-        
+                    downloaded += len(chunk)
+                    progress_percentage = int(100 * downloaded / total_length)
+                    progress_bar['value'] = progress_percentage
+                    installing_window.update()
+
         # Extrair o conteúdo do zip
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(temp_dir)
@@ -198,6 +206,12 @@ def download_ffmpeg():
 
         messagebox.showinfo("Sucesso", f"FFmpeg e ffprobe foram baixados e instalados com sucesso em {dest_folder}.")
     
+    except requests.exceptions.RequestException as e:
+        messagebox.showerror("Erro de Download", f"Erro ao baixar o FFmpeg. Verifique sua conexão com a internet.\n\nDetalhes do erro: {e}")
+    
+    except zipfile.BadZipFile:
+        messagebox.showerror("Erro de Extração", "Erro ao extrair o arquivo ZIP. O arquivo pode estar corrompido.")
+
     except Exception as e:
         messagebox.showerror("Erro", f"Erro ao baixar ou instalar FFmpeg: {e}")
     
@@ -222,6 +236,11 @@ def convert_videos():
     ffmpeg_path = ffmpeg_path_entry.get()
     if not os.path.exists(ffmpeg_path):
         messagebox.showerror("Erro", "Caminho do FFmpeg não encontrado. Verifique se o caminho está correto.")
+        return
+
+    # Verificação de diretório de saída
+    if not use_same_directory_var.get() and not output_dir_entry.get():
+        messagebox.showerror("Erro", "Por favor, selecione um diretório de saída ou marque a opção 'Usar mesmo diretório do arquivo de entrada'.")
         return
 
     output_format = format_var.get()
@@ -383,7 +402,10 @@ def show_video_info():
     ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe' if platform.system() == 'Darwin' else 'ffprobe.exe')
 
     if not os.path.exists(ffprobe_path):
-        messagebox.showerror("Erro", "Caminho do ffprobe não encontrado. Verifique se o caminho está correto.")
+        if platform.system() == 'Darwin':
+            messagebox.showinfo("MacOS", "Por favor, baixe o FFmpeg e ffprobe manualmente em https://evermeet.cx/ffmpeg/")
+        else:
+            messagebox.showerror("Erro", "Caminho do ffprobe não encontrado. Verifique se o caminho está correto.")
         return
 
     info_window = tk.Toplevel()
@@ -479,25 +501,23 @@ def show_video_info():
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível obter informações do vídeo {input_file}.\nErro: {str(e)}")
 
-# Função para exibir a janela de instalação
 def show_installing_window(install_path):
     installing_window = tk.Toplevel(root)
     installing_window.title("Instalação em Andamento")
-    installing_window.geometry("400x120")
+    installing_window.geometry("400x150")
     installing_window.resizable(False, False)
     
     tk.Label(installing_window, text="Instalando FFmpeg, por favor aguarde...").pack(pady=10)
     tk.Label(installing_window, text=f"Instalando em: {install_path}").pack(pady=5)
     
-    # Bloquear interação com a janela principal
-    installing_window.transient(root)
-    installing_window.grab_set()
-
-    return installing_window
+    progress_bar = ttk.Progressbar(installing_window, orient="horizontal", mode="determinate", length=300)
+    progress_bar.pack(pady=10)
+    
+    return installing_window, progress_bar
 
 # Criar janela principal
 root = tk.Tk()
-root.title("Conversor de Vídeo Avançado")
+root.title("Conversor de Vídeo Avançado - FFmpeg GUI para TJSP")
 
 # Ajustar o tamanho da janela com base no sistema operacional
 if platform.system() == "Darwin":  # macOS
@@ -575,7 +595,7 @@ overwrite_var = tk.BooleanVar()
 overwrite_check = tk.Checkbutton(root, text="Sobrescrever arquivos existentes", variable=overwrite_var)
 overwrite_check.grid(row=5, column=2, columnspan=2, padx=5, pady=5, sticky="w")
 
-# Formato de Saída
+# Formato de saída
 tk.Label(root, text="Formato de Saída:").grid(row=6, column=0, padx=5, pady=5, sticky="w")
 format_var = tk.StringVar()
 format_menu = tk.OptionMenu(root, format_var, "mp4", "avi", "mkv", "flv", "mov", "mp3", "wmv")
