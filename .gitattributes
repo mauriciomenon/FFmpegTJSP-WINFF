@@ -2,3 +2,6 @@ ffmpeg.exe filter=lfs diff=lfs merge=lfs -text
 ffprobe.exe filter=lfs diff=lfs merge=lfs -text
 WinFF/build/GUI_tkinter_WINFF/GUI_tkinter_WINFF.pkg filter=lfs diff=lfs merge=lfs -text
 *.exe filter=lfs diff=lfs merge=lfs -text
+WinFF/dist/FFmpeg[[:space:]]-[[:space:]]TJSP[[:space:]](com[[:space:]]ffmpeg).exe filter=lfs diff=lfs merge=lfs -text
+WinFF/dist/FFmpeg[[:space:]]-[[:space:]]TJSP[[:space:]](com[[:space:]]ffmpeg).zip filter=lfs diff=lfs merge=lfs -text
+WinFF/build/FFmpeg[[:space:]]-[[:space:]]TJSP[[:space:]](inclui[[:space:]]ffmpeg)/FFmpeg[[:space:]]-[[:space:]]TJSP[[:space:]](inclui[[:space:]]ffmpeg).pkg filter=lfs diff=lfs merge=lfs -text
