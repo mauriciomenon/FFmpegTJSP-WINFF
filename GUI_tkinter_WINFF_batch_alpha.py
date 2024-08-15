@@ -76,6 +76,13 @@ def save_config():
         config.write(configfile)
     messagebox.showinfo("Configuração", f"Configuração salva com sucesso em {config_file_path}.")
 
+# Função para carregar uma configuração de arquivo
+def load_config_from_file():
+    config_file = filedialog.askopenfilename(title="Carregar Configuração", filetypes=[("Configurações", "*.ini")])
+    if config_file:
+        load_config(config_file)
+        messagebox.showinfo("Carregar Configuração", "Configuração carregada com sucesso!")
+
 # Função para definir configurações padrão
 def set_default_options():
     format_var.set("wmv")
@@ -148,7 +155,6 @@ def select_ffmpeg_executable():
     with open(config_file, 'w') as configfile:
         config.write(configfile)
     update_command_display()
-
 
 def download_ffmpeg():
     download_url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
@@ -366,7 +372,6 @@ def toggle_output_directory():
 def show_about():
     messagebox.showinfo("About", "Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \nVersão 8.3.0 \n07/08/2024")
 
-# Função para exibir informações do arquivo de vídeo# Função para exibir informações do arquivo de vídeo
 # Função para exibir informações do arquivo de vídeo
 def show_video_info():
     files = file_list.get(0, tk.END)
@@ -473,7 +478,8 @@ def show_video_info():
 
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível obter informações do vídeo {input_file}.\nErro: {str(e)}")
-            
+
+# Função para exibir a janela de instalação
 def show_installing_window(install_path):
     installing_window = tk.Toplevel(root)
     installing_window.title("Instalação em Andamento")
@@ -569,7 +575,7 @@ overwrite_var = tk.BooleanVar()
 overwrite_check = tk.Checkbutton(root, text="Sobrescrever arquivos existentes", variable=overwrite_var)
 overwrite_check.grid(row=5, column=2, columnspan=2, padx=5, pady=5, sticky="w")
 
-# Formato de saída
+# Formato de Saída
 tk.Label(root, text="Formato de Saída:").grid(row=6, column=0, padx=5, pady=5, sticky="w")
 format_var = tk.StringVar()
 format_menu = tk.OptionMenu(root, format_var, "mp4", "avi", "mkv", "flv", "mov", "mp3", "wmv")
@@ -639,7 +645,7 @@ individual_progress = ttk.Progressbar(root, orient="horizontal", mode="determina
 individual_progress.grid(row=13, column=2, columnspan=2, padx=5, pady=5, sticky="we")
 
 # Botão para aplicar opções padrão
-default_button = tk.Button(root, text="Opções Padrão", command=set_default_options)
+default_button = tk.Button(root, text="Opções Padrão (TJSP)", command=set_default_options)
 default_button.grid(row=14, column=0, padx=5, pady=5, sticky="we")
 
 # Botão para carregar opções salvas
