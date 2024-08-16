@@ -262,6 +262,7 @@ def convert_videos():
     audio_sample_rate = audio_sample_rate_entry.get()
     audio_channels = audio_channels_var.get()
 
+
     def run_conversion():
         total_files = len(files)
         total_progress['maximum'] = total_files
@@ -322,7 +323,17 @@ def convert_videos():
             individual_progress['value'] = 100
             root.update_idletasks()
 
-        messagebox.showinfo("Sucesso", "Conversão de vídeos concluída.")
+        # Mostrar a mensagem de conclusão com o caminho completo
+        success_message = f"Conversão de vídeos concluída.\nArquivos salvos em: {output_dir}"
+        result = messagebox.askyesno("Sucesso", success_message + "\n\nDeseja abrir a pasta com os arquivos convertidos?")
+
+        if result:
+            if platform.system() == "Windows":
+                os.startfile(output_dir)
+            elif platform.system() == "Darwin":  # macOS
+                subprocess.Popen(["open", output_dir])
+            else:  # Linux ou outros
+                subprocess.Popen(["xdg-open", output_dir])
 
     conversion_thread = threading.Thread(target=run_conversion)
     conversion_thread.start()
