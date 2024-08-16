@@ -1,4 +1,4 @@
-('C:\\Users\\menon\\git\\aulascomad\\WinFF\\build\\FFmpeg - TJSP (inclui '
+('C:\\Users\\menon\\git\\FFmpegTJSP-WINFF\\build\\FFmpeg - TJSP (inclui '
  'ffmpeg)\\PYZ-00.pyz',
  [('OpenSSL',
    'C:\\Python310\\lib\\site-packages\\OpenSSL\\__init__.py',

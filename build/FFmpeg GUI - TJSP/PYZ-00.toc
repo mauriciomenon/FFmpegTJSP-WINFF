@@ -1,4 +1,4 @@
-('C:\\Users\\menon\\git\\aulascomad\\WinFF\\build\\FFmpeg GUI - '
+('C:\\Users\\menon\\git\\FFmpegTJSP-WINFF\\build\\FFmpeg GUI - '
  'TJSP\\PYZ-00.pyz',
  [('OpenSSL',
    'C:\\Python310\\lib\\site-packages\\OpenSSL\\__init__.py',

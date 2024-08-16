@@ -41,5 +41,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['Martz90-Circle-Video-camera - Copia.ico'],
+    icon=['C:\\Users\\menon\\git\\FFmpegTJSP-WINFF\\camera.ico'],
 )
