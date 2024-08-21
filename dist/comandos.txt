@@ -1,4 +1,0 @@
-PS C:\Users\menon\git\aulascomad\WinFF> pyinstaller  --windowed --name "FFmpeg - TJSP (inclui ffmpeg)" --add-data "bin;bin" .\GUI_tkinter_WINFF_batch.py --icon "camera.ico" --clean
-pyinstaller.exe '.\FFmpeg GUI - TJSP.spec' --clean
-
-pyinstaller --onefile --windowed --name "FFmpeg - TJSP (inclui ffmpeg)" --add-data "bin;bin" .\GUI_tkinter_WINFF_batch.py --icon "camera.ico" --clean
