@@ -234,6 +234,8 @@ def start_download_ffmpeg():
     download_thread = threading.Thread(target=download_ffmpeg)
     download_thread.start()
 
+import threading
+
 def show_ffmpeg_info():
     # Subfunção para gerar mensagens de erro personalizadas
     def get_error_message(item):
@@ -242,46 +244,37 @@ def show_ffmpeg_info():
     ffmpeg_path = ffmpeg_path_entry.get()
     ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe' if platform.system() == 'Darwin' else 'ffprobe.exe')
 
-    try:
-        ffmpeg_version_output = subprocess.check_output([ffmpeg_path, "-version"], universal_newlines=True).splitlines()[0]
-        ffmpeg_version = ffmpeg_version_output.split()[2]  # Captura apenas a versão
-    except Exception as e:
-        ffmpeg_version_output = get_error_message("versão") + str(e)
-        ffmpeg_version = "Desconhecida"
+    results = {}
+    
+    def run_command(command, key, error_message):
+        try:
+            result = subprocess.check_output(command, universal_newlines=True, stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW).strip()
+        except Exception as e:
+            result = error_message + str(e)
+        results[key] = result
 
-    try:
-        ffprobe_output = subprocess.check_output([ffprobe_path, "-version"], universal_newlines=True).strip()
-    except Exception as e:
-        ffprobe_output = get_error_message("ffprobe") + str(e)
-    
-    try:
-        ffmpeg_buildconf = subprocess.check_output([ffmpeg_path, "-buildconf"], universal_newlines=True).strip()
-    except Exception as e:
-        ffmpeg_buildconf = get_error_message("configuração de build") + str(e)
-    
-    try:
-        ffmpeg_codecs = subprocess.check_output([ffmpeg_path, "-codecs"], universal_newlines=True).strip()
-    except Exception as e:
-        ffmpeg_codecs = get_error_message("codecs") + str(e)
-    
-    try:
-        ffmpeg_formats = subprocess.check_output([ffmpeg_path, "-formats"], universal_newlines=True).strip()
-    except Exception as e:
-        ffmpeg_formats = get_error_message("formatos") + str(e)
-    
-    try:
-        ffmpeg_protocols = subprocess.check_output([ffmpeg_path, "-protocols"], universal_newlines=True).strip()
-    except Exception as e:
-        ffmpeg_protocols = get_error_message("protocolos") + str(e)
-    
-    try:
-        ffmpeg_filters = subprocess.check_output([ffmpeg_path, "-filters"], universal_newlines=True).strip()
-    except Exception as e:
-        ffmpeg_filters = get_error_message("filtros") + str(e)
-    
+    # Criar e iniciar threads para cada comando
+    threads = [
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-version"], "ffmpeg_version_output", get_error_message("versão"))),
+        threading.Thread(target=run_command, args=([ffprobe_path, "-version"], "ffprobe_output", get_error_message("ffprobe"))),
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-buildconf"], "ffmpeg_buildconf", get_error_message("configuração de build"))),
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-codecs"], "ffmpeg_codecs", get_error_message("codecs"))),
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-formats"], "ffmpeg_formats", get_error_message("formatos"))),
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-protocols"], "ffmpeg_protocols", get_error_message("protocolos"))),
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-filters"], "ffmpeg_filters", get_error_message("filtros"))),
+    ]
+
+    for thread in threads:
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    ffmpeg_version = results["ffmpeg_version_output"].split()[2] if "ffmpeg_version_output" in results else "Desconhecida"
+
     version_info = (
-        f"FFmpeg:\n{ffmpeg_version_output}\n\n"
-        f"Configuração de Build do FFmpeg:\n{ffmpeg_buildconf}\n\n"
+        f"FFmpeg:\n{results.get('ffmpeg_version_output', '')}\n\n"
+        f"Configuração de Build do FFmpeg:\n{results.get('ffmpeg_buildconf', '')}\n\n"
     )
     
     # Cria a janela com a versão do FFmpeg no título
@@ -304,11 +297,12 @@ def show_ffmpeg_info():
 
     # Adicionar abas com as informações
     add_tab("Versão e Configuração", version_info)
-    add_tab("Codecs", ffmpeg_codecs)
-    add_tab("Formatos", ffmpeg_formats)
-    add_tab("Protocolos", ffmpeg_protocols)
-    add_tab("Filtros", ffmpeg_filters)
-    add_tab("ffprobe", ffprobe_output)
+    add_tab("Codecs", results.get('ffmpeg_codecs', ''))
+    add_tab("Formatos", results.get('ffmpeg_formats', ''))
+    add_tab("Protocolos", results.get('ffmpeg_protocols', ''))
+    add_tab("Filtros", results.get('ffmpeg_filters', ''))
+    add_tab("ffprobe", results.get('ffprobe_output', ''))
+
 
 # Função para converter vídeos em lote
 def convert_videos():
@@ -489,7 +483,7 @@ def toggle_output_directory():
 
 # Função para exibir informações sobre o programa
 def show_about():
-    messagebox.showinfo("About", "Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \nVersão 8.4.0 \n21/08/2024")
+    messagebox.showinfo("About", "Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \nVersão 8.5.0 \n22/08/2024")
 
 # Função para exibir informações do arquivo de vídeo
 def show_video_info():
