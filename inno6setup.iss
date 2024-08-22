@@ -40,6 +40,9 @@ Source: "C:\Users\menon\git\FFmpegTJSP-WINFF\dist\FFmpeg - TJSP (inclui ffmpeg)\
 ; Inclua a subpasta bin e todo o seu conteúdo
 Source: "C:\Users\menon\git\FFmpegTJSP-WINFF\dist\FFmpeg - TJSP (inclui ffmpeg)\bin\*"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+; Inclua a subpasta locales e todo o seu conteúdo
+Source: "C:\Users\menon\git\FFmpegTJSP-WINFF\dist\FFmpeg - TJSP (inclui ffmpeg)\locales\*"; DestDir: "{app}\locales"; Flags: ignoreversion recursesubdirs createallsubdirs
+
 ; Inclua todas as outras pastas e arquivos (certifique-se de substituir * pelo caminho correto)
 Source: "C:\Users\menon\git\FFmpegTJSP-WINFF\dist\FFmpeg - TJSP (inclui ffmpeg)\bcrypt\*"; DestDir: "{app}\bcrypt"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\menon\git\FFmpegTJSP-WINFF\dist\FFmpeg - TJSP (inclui ffmpeg)\certifi\*"; DestDir: "{app}\certifi"; Flags: ignoreversion recursesubdirs createallsubdirs
