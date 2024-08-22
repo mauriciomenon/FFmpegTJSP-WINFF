@@ -94,7 +94,7 @@ def load_config_from_file():
 
 # Função para definir configurações padrão
 def set_default_options():
-    format_var.set("wmv")
+    format_var.set("asf")
     resolution_var.set("320x240")
     video_codec_var.set("wmv2")
     audio_codec_var.set("wmav2")
@@ -234,6 +234,47 @@ def download_ffmpeg():
 def start_download_ffmpeg():
     download_thread = threading.Thread(target=download_ffmpeg)
     download_thread.start()
+    
+def show_ffmpeg_version():
+    ffmpeg_path = ffmpeg_path_entry.get()
+    ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe' if platform.system() == 'Darwin' else 'ffprobe.exe')
+
+    try:
+        ffmpeg_version = subprocess.check_output([ffmpeg_path, "-version"], universal_newlines=True).strip()
+    except Exception as e:
+        ffmpeg_version = f"Erro ao obter a versão do FFmpeg: {str(e)}"
+
+    try:
+        ffprobe_version = subprocess.check_output([ffprobe_path, "-version"], universal_newlines=True).strip()
+    except Exception as e:
+        ffprobe_version = f"Erro ao obter a versão do ffprobe: {str(e)}"
+    
+    try:
+        ffmpeg_buildconf = subprocess.check_output([ffmpeg_path, "-buildconf"], universal_newlines=True).strip()
+    except Exception as e:
+        ffmpeg_buildconf = f"Erro ao obter a configuração de build do FFmpeg: {str(e)}"
+    
+    try:
+        ffmpeg_codecs = subprocess.check_output([ffmpeg_path, "-codecs"], universal_newlines=True).strip()
+    except Exception as e:
+        ffmpeg_codecs = f"Erro ao obter a lista de codecs do FFmpeg: {str(e)}"
+    
+    try:
+        ffmpeg_formats = subprocess.check_output([ffmpeg_path, "-formats"], universal_newlines=True).strip()
+    except Exception as e:
+        ffmpeg_formats = f"Erro ao obter a lista de formatos do FFmpeg: {str(e)}"
+    
+    version_info = (
+        f"FFmpeg:\n{ffmpeg_version}\n\n"
+        f"ffprobe:\n{ffprobe_version}\n\n"
+        f"Configuração de Build do FFmpeg:\n{ffmpeg_buildconf}\n\n"
+        f"Codecs suportados pelo FFmpeg:\n{ffmpeg_codecs}\n\n"
+        f"Formatos suportados pelo FFmpeg:\n{ffmpeg_formats}\n\n"
+    )
+    
+    # Limita a quantidade de texto exibido para não sobrecarregar a caixa de diálogo
+    messagebox.showinfo("Versão do FFmpeg e ffprobe", version_info[:2000] + "\n\n...Informações limitadas para exibição. Confira no terminal para mais detalhes.")
+
 
 # Função para converter vídeos em lote
 def convert_videos():
@@ -251,12 +292,14 @@ def convert_videos():
     if not use_same_directory_var.get() and not output_dir_entry.get():
         messagebox.showerror("Erro", "Por favor, selecione um diretório de saída ou marque a opção 'Usar mesmo diretório do arquivo de entrada'.")
         return
-
+    
     output_format = format_var.get()
+    video_codec = video_codec_var.get()
+    if video_codec == "wmv2":
+        output_format = "asf"
     video_bitrate = video_bitrate_entry.get()
     audio_bitrate = audio_bitrate_entry.get()
     resolution = resolution_var.get()
-    video_codec = video_codec_var.get()
     audio_codec = audio_codec_var.get()
     frame_rate = frame_rate_entry.get()
     audio_sample_rate = audio_sample_rate_entry.get()
@@ -338,6 +381,7 @@ def convert_videos():
     conversion_thread = threading.Thread(target=run_conversion)
     conversion_thread.start()
 
+
 # Função para atualizar a exibição do comando FFmpeg
 def update_command_display():
     files = file_list.get(0, tk.END)
@@ -347,10 +391,14 @@ def update_command_display():
 
     first_file = files[0]
     output_format = format_var.get()
+    video_codec = video_codec_var.get()
+    if video_codec == "wmv2":
+        output_format = "asf"
+    else:
+        output_format = format_var.get()
     video_bitrate = video_bitrate_entry.get()
     audio_bitrate = audio_bitrate_entry.get()
     resolution = resolution_var.get()
-    video_codec = video_codec_var.get()
     audio_codec = audio_codec_var.get()
     frame_rate = frame_rate_entry.get()
     audio_sample_rate = audio_sample_rate_entry.get()
@@ -409,7 +457,7 @@ def toggle_output_directory():
 
 # Função para exibir informações sobre o programa
 def show_about():
-    messagebox.showinfo("About", "Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \nVersão 8.3.0 \n07/08/2024")
+    messagebox.showinfo("About", "Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \nVersão 8.4.0 \n21/08/2024")
 
 # Função para exibir informações do arquivo de vídeo
 def show_video_info():
@@ -521,6 +569,26 @@ def show_video_info():
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível obter informações do vídeo {input_file}.\nErro: {str(e)}")
 
+
+# Função para exibir a versão do FFmpeg e do ffprobe
+def show_ffmpeg_version():
+    ffmpeg_path = ffmpeg_path_entry.get()
+    ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe' if platform.system() == 'Darwin' else 'ffprobe.exe')
+
+    try:
+        ffmpeg_version = subprocess.check_output([ffmpeg_path, "-version"], universal_newlines=True).splitlines()[0]
+    except Exception as e:
+        ffmpeg_version = f"Erro ao obter a versão do FFmpeg: {str(e)}"
+
+    try:
+        ffprobe_version = subprocess.check_output([ffprobe_path, "-version"], universal_newlines=True).splitlines()[0]
+    except Exception as e:
+        ffprobe_version = f"Erro ao obter a versão do ffprobe: {str(e)}"
+
+    version_info = f"FFmpeg: {ffmpeg_version}\nffprobe: {ffprobe_version}"
+    
+    messagebox.showinfo("Versão do FFmpeg e ffprobe", version_info)
+
 def show_installing_window(install_path):
     installing_window = tk.Toplevel(root)
     installing_window.title("Instalação em Andamento")
@@ -552,9 +620,11 @@ top_button_frame.grid(row=0, column=0, columnspan=4, padx=5, pady=5, sticky="we"
 # Botões "Sobre o Programa" e "Codecs do vídeo"
 about_button = tk.Button(top_button_frame, text="Sobre o Programa", command=show_about, font=("TkDefaultFont", 9))
 about_button.pack(side="left", padx=5)
-info_button = tk.Button(top_button_frame, text="Codecs do vídeo", command=show_video_info, font=("TkDefaultFont", 9))
+info_button = tk.Button(top_button_frame, text="Informações dos videos selecionados", command=show_video_info, font=("TkDefaultFont", 9))
 info_button.pack(side="left", padx=5)
-download_button = tk.Button(top_button_frame, text="Baixar FFmpeg", command=start_download_ffmpeg, font=("TkDefaultFont", 9))
+version_button = tk.Button(top_button_frame, text="Versão do FFmpeg", command=show_ffmpeg_version, font=("TkDefaultFont", 9))
+version_button.pack(side="left", padx=5)
+download_button = tk.Button(top_button_frame, text="Instalar o FFmpeg", command=start_download_ffmpeg, font=("TkDefaultFont", 9))
 download_button.pack(side="left", padx=5)
 
 # Label para arquivos selecionados
@@ -618,7 +688,7 @@ overwrite_check.grid(row=5, column=2, columnspan=2, padx=5, pady=5, sticky="w")
 # Formato de saída
 tk.Label(root, text="Formato de Saída:").grid(row=6, column=0, padx=5, pady=5, sticky="w")
 format_var = tk.StringVar()
-format_menu = tk.OptionMenu(root, format_var, "mp4", "avi", "mkv", "flv", "mov", "mp3", "wmv")
+format_menu = tk.OptionMenu(root, format_var, "mp4", "avi", "mkv", "flv", "mov", "mp3", "wmv", "asf")
 format_menu.grid(row=6, column=1, padx=5, pady=5, sticky="w")
 
 # Bitrate de vídeo
