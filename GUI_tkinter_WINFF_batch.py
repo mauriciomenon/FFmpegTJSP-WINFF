@@ -235,51 +235,80 @@ def start_download_ffmpeg():
     download_thread.start()
 
 def show_ffmpeg_info():
+    # Subfunção para gerar mensagens de erro personalizadas
+    def get_error_message(item):
+        return f"Erro ao obter a lista de {item} do FFmpeg: "
+
     ffmpeg_path = ffmpeg_path_entry.get()
     ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe' if platform.system() == 'Darwin' else 'ffprobe.exe')
 
     try:
-        ffmpeg_version = subprocess.check_output([ffmpeg_path, "-version"], universal_newlines=True)
-        ffmpeg_buildconf = subprocess.check_output([ffmpeg_path, "-buildconf"], universal_newlines=True)
-        ffmpeg_codecs = subprocess.check_output([ffmpeg_path, "-codecs"], universal_newlines=True)
-        ffmpeg_formats = subprocess.check_output([ffmpeg_path, "-formats"], universal_newlines=True)
-        ffmpeg_protocols = subprocess.check_output([ffmpeg_path, "-protocols"], universal_newlines=True)
-        ffmpeg_filters = subprocess.check_output([ffmpeg_path, "-filters"], universal_newlines=True)
-        ffmpeg_bsfs = subprocess.check_output([ffmpeg_path, "-bsfs"], universal_newlines=True)
+        ffmpeg_version_output = subprocess.check_output([ffmpeg_path, "-version"], universal_newlines=True).splitlines()[0]
+        ffmpeg_version = ffmpeg_version_output.split()[2]  # Captura apenas a versão
     except Exception as e:
-        messagebox.showerror("Erro", f"Erro ao obter informações do FFmpeg: {str(e)}")
-        return
+        ffmpeg_version_output = get_error_message("versão") + str(e)
+        ffmpeg_version = "Desconhecida"
 
-    # Criar uma janela para exibir as informações
+    try:
+        ffprobe_output = subprocess.check_output([ffprobe_path, "-version"], universal_newlines=True).strip()
+    except Exception as e:
+        ffprobe_output = get_error_message("ffprobe") + str(e)
+    
+    try:
+        ffmpeg_buildconf = subprocess.check_output([ffmpeg_path, "-buildconf"], universal_newlines=True).strip()
+    except Exception as e:
+        ffmpeg_buildconf = get_error_message("configuração de build") + str(e)
+    
+    try:
+        ffmpeg_codecs = subprocess.check_output([ffmpeg_path, "-codecs"], universal_newlines=True).strip()
+    except Exception as e:
+        ffmpeg_codecs = get_error_message("codecs") + str(e)
+    
+    try:
+        ffmpeg_formats = subprocess.check_output([ffmpeg_path, "-formats"], universal_newlines=True).strip()
+    except Exception as e:
+        ffmpeg_formats = get_error_message("formatos") + str(e)
+    
+    try:
+        ffmpeg_protocols = subprocess.check_output([ffmpeg_path, "-protocols"], universal_newlines=True).strip()
+    except Exception as e:
+        ffmpeg_protocols = get_error_message("protocolos") + str(e)
+    
+    try:
+        ffmpeg_filters = subprocess.check_output([ffmpeg_path, "-filters"], universal_newlines=True).strip()
+    except Exception as e:
+        ffmpeg_filters = get_error_message("filtros") + str(e)
+    
+    version_info = (
+        f"FFmpeg:\n{ffmpeg_version_output}\n\n"
+        f"Configuração de Build do FFmpeg:\n{ffmpeg_buildconf}\n\n"
+    )
+    
+    # Cria a janela com a versão do FFmpeg no título
     info_window = tk.Toplevel(root)
-    info_window.title("Informações do FFmpeg")
-
-    # Criar um notebook com abas
+    info_window.title(f"FFmpeg Info - {ffmpeg_version}")
+    
     notebook = ttk.Notebook(info_window)
     notebook.pack(fill='both', expand=True)
-
-    # Função auxiliar para adicionar uma aba com um texto rolável
+    
+    # Função para adicionar uma aba com um Text widget e Scrollbar
     def add_tab(title, content):
         frame = tk.Frame(notebook)
-        text_widget = tk.Text(frame, wrap='word', height=40, width=100)
+        text_widget = tk.Text(frame, wrap='word', height=30, width=100)
         text_widget.insert('end', content)
-        text_widget.config(state='normal')  # Permite copiar texto
         text_widget.pack(side='left', fill='both', expand=True)
-
         scrollbar = tk.Scrollbar(frame, orient='vertical', command=text_widget.yview)
         text_widget.config(yscrollcommand=scrollbar.set)
         scrollbar.pack(side='right', fill='y')
-
         notebook.add(frame, text=title)
 
-    # Adicionar abas com diferentes informações
-    add_tab("Versão", ffmpeg_version)
-    add_tab("Configuração de Build", ffmpeg_buildconf)
+    # Adicionar abas com as informações
+    add_tab("Versão e Configuração", version_info)
     add_tab("Codecs", ffmpeg_codecs)
     add_tab("Formatos", ffmpeg_formats)
     add_tab("Protocolos", ffmpeg_protocols)
     add_tab("Filtros", ffmpeg_filters)
-    add_tab("Bitstream Filters", ffmpeg_bsfs)
+    add_tab("ffprobe", ffprobe_output)
 
 # Função para converter vídeos em lote
 def convert_videos():
