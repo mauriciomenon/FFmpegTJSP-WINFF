@@ -24,38 +24,24 @@ def get_default_ffmpeg_path():
     executable_name = 'ffmpeg.exe' if platform.system() == 'Windows' else 'ffmpeg'
     return os.path.join(base_path, executable_name)
 
-# Função para obter o caminho da pasta 'locales'
-def get_locales_path():
-    if getattr(sys, 'frozen', False):  # Verifica se o programa está empacotado pelo PyInstaller
-        # Se empacotado, usa o diretório onde o executável está localizado
-        base_path = os.path.join(sys._MEIPASS, 'locales')
-    else:
-        # Se não empacotado, usa a localização do script Python
-        base_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'locales')
-    
-    return base_path
+# Inicializar o objeto de configuração
+config = configparser.ConfigParser()
+config_file = 'config.ini'
 
 # Função para carregar o idioma selecionado
 def load_language(lang_code):
-    locales_path = get_locales_path()
-    language_file = os.path.join(locales_path, f'{lang_code}.json')
+    locales_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'locales')
+    language_file = os.path.join(locales_path, f"{lang_code}.json")
+    
     try:
         with open(language_file, "r", encoding="utf-8") as file:
             return json.load(file)
     except FileNotFoundError:
-        print(f"Arquivo de idioma '{language_file}' não encontrado.")
+        messagebox.showerror("Error", f"Language file '{language_file}' not found.")
         return {}
 
 # Carregar o idioma padrão (Português)
 language = load_language("pt_br")
-
-# Função auxiliar para obter traduções com fallback
-def t(key):
-    return language.get(key, key)
-
-# Inicializar o objeto de configuração
-config = configparser.ConfigParser()
-config_file = 'config.ini'
 
 # Função para carregar ou criar configuração
 def load_or_create_config():
@@ -89,9 +75,9 @@ def load_config(file_name):
 
 # Função para salvar configurações
 def save_config():
-    config_file_path = filedialog.asksaveasfilename(initialdir=os.getcwd(), title=t("save_config"), defaultextension=".ini", filetypes=[("Arquivos INI", "*.ini")])
+    config_file_path = filedialog.asksaveasfilename(initialdir=os.getcwd(), title=language.get("save_config", "Save Configuration"), defaultextension=".ini", filetypes=[("INI Files", "*.ini")])
     if not config_file_path:
-        messagebox.showwarning(t("warning"), t("no_file_selected"))
+        messagebox.showwarning(language.get("warning", "Warning"), language.get("no_file_selected", "No file selected. Configuration not saved."))
         return
 
     config['DEFAULT'] = {
@@ -111,14 +97,14 @@ def save_config():
     }
     with open(config_file_path, 'w') as configfile:
         config.write(configfile)
-    messagebox.showinfo(t("config"), f"{t('config_saved')} {config_file_path}.")
+    messagebox.showinfo(language.get("config", "Configuration"), f"{language.get('config_saved', 'Configuration saved successfully in')} {config_file_path}.")
 
 # Função para carregar uma configuração
 def load_config_from_file():
-    config_file = filedialog.askopenfilename(title=t("load_config"), filetypes=[(t("configurations"), "*.ini")])
+    config_file = filedialog.askopenfilename(title=language.get("load_config", "Load Configuration"), filetypes=[(language.get("configurations", "Configurations"), "*.ini")])
     if config_file:
         load_config(config_file)
-        messagebox.showinfo(t("load_config"), t("config_loaded"))
+        messagebox.showinfo(language.get("load_config", "Load Configuration"), language.get("config_loaded", "Configuration loaded successfully!"))
 
 # Função para definir configurações padrão
 def set_default_options():
@@ -168,7 +154,7 @@ def apply_saved_config():
 
 # Função para selecionar arquivos de vídeo
 def select_files():
-    files = filedialog.askopenfilenames(title=t("select_files"))
+    files = filedialog.askopenfilenames(title=language.get("select_files", "Select Files"))
     if files:
         current_files = file_list.get(0, tk.END)
         for file in files:
@@ -178,14 +164,14 @@ def select_files():
 
 # Função para selecionar diretório de saída
 def select_output_directory():
-    directory = filedialog.askdirectory(title=t("output_directory"))
+    directory = filedialog.askdirectory(title=language.get("output_directory", "Select Output Directory"))
     output_dir_entry.delete(0, tk.END)
     output_dir_entry.insert(0, directory)
     update_command_display()
 
 # Função para selecionar o executável do FFmpeg
 def select_ffmpeg_executable():
-    ffmpeg_path = filedialog.askopenfilename(title=t("ffmpeg_path"), filetypes=[(t("executables"), "*.*")])
+    ffmpeg_path = filedialog.askopenfilename(title=language.get("ffmpeg_path", "Select FFmpeg Executable"), filetypes=[(language.get("executables", "Executables"), "*.*")])
     ffmpeg_path_entry.delete(0, tk.END)
     ffmpeg_path_entry.insert(0, ffmpeg_path)
     config['DEFAULT']['ffmpeg_path'] = ffmpeg_path
@@ -195,12 +181,12 @@ def select_ffmpeg_executable():
 
 def show_installing_window(install_path):
     installing_window = tk.Toplevel(root)
-    installing_window.title(t("installing"))
+    installing_window.title(language.get("installing", "Installing, please wait..."))
     installing_window.geometry("400x150")
     installing_window.resizable(False, False)
     
-    tk.Label(installing_window, text=t("installing_message")).pack(pady=10)
-    tk.Label(installing_window, text=f"{t('installing_in')}: {install_path}").pack(pady=5)
+    tk.Label(installing_window, text=language.get("installing_message", "Installing FFmpeg, please wait...")).pack(pady=10)
+    tk.Label(installing_window, text=f"{language.get('installing_in', 'Installing in')}: {install_path}").pack(pady=5)
     
     progress_bar = ttk.Progressbar(installing_window, orient="horizontal", mode="determinate", length=300)
     progress_bar.pack(pady=10)
@@ -213,7 +199,7 @@ def download_ffmpeg():
 
     # Verificar se a pasta bin já existe
     if os.path.exists(dest_folder):
-        result = messagebox.askyesno(t("confirmation"), t("bin_exists"))
+        result = messagebox.askyesno(language.get("confirmation", "Confirmation"), language.get("bin_exists", "The 'bin' folder already exists. Do you want to continue and overwrite the files?"))
         if not result:
             return
 
@@ -255,16 +241,16 @@ def download_ffmpeg():
             d = os.path.join(dest_folder, item)
             shutil.move(s, d)
 
-        messagebox.showinfo(t("success"), f"{t('ffmpeg_installed')} {dest_folder}.")
+        messagebox.showinfo(language.get("success", "Success"), f"{language.get('ffmpeg_installed', 'FFmpeg and ffprobe were successfully installed in')} {dest_folder}.")
     
     except requests.exceptions.RequestException as e:
-        messagebox.showerror(t("download_error"), f"{t('download_error_message')} {e}")
+        messagebox.showerror(language.get("download_error", "Download Error"), f"{language.get('download_error_message', 'Error downloading FFmpeg. Please check your internet connection.')}\n\n{language.get('error_details', 'Error details')}: {e}")
     
     except zipfile.BadZipFile:
-        messagebox.showerror(t("extraction_error"), t("extraction_error_message"))
+        messagebox.showerror(language.get("extraction_error", "Extraction Error"), language.get("extraction_error_message", "Error extracting the ZIP file. The file may be corrupted."))
 
     except Exception as e:
-        messagebox.showerror(t("error"), f"{t('ffmpeg_installation_error')} {e}")
+        messagebox.showerror(language.get("error", "Error"), f"{language.get('ffmpeg_installation_error', 'Error installing FFmpeg:')} {e}")
     
     finally:
         # Limpar o diretório temporário
@@ -282,7 +268,7 @@ import threading
 def show_ffmpeg_info():
     # Subfunção para gerar mensagens de erro personalizadas
     def get_error_message(item):
-        return f"{t('error_getting')} {item} {t('from_ffmpeg')}: "
+        return f"{language.get('error_getting', 'Error getting')} {item} {language.get('from_ffmpeg', 'from FFmpeg')}: "
 
     ffmpeg_path = ffmpeg_path_entry.get()
     ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe' if platform.system() == 'Darwin' else 'ffprobe.exe')
@@ -298,13 +284,13 @@ def show_ffmpeg_info():
 
     # Criar e iniciar threads para cada comando
     threads = [
-        threading.Thread(target=run_command, args=([ffmpeg_path, "-version"], "ffmpeg_version_output", get_error_message("versão"))),
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-version"], "ffmpeg_version_output", get_error_message("version"))),
         threading.Thread(target=run_command, args=([ffprobe_path, "-version"], "ffprobe_output", get_error_message("ffprobe"))),
-        threading.Thread(target=run_command, args=([ffmpeg_path, "-buildconf"], "ffmpeg_buildconf", get_error_message("configuração de build"))),
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-buildconf"], "ffmpeg_buildconf", get_error_message("build configuration"))),
         threading.Thread(target=run_command, args=([ffmpeg_path, "-codecs"], "ffmpeg_codecs", get_error_message("codecs"))),
-        threading.Thread(target=run_command, args=([ffmpeg_path, "-formats"], "ffmpeg_formats", get_error_message("formatos"))),
-        threading.Thread(target=run_command, args=([ffmpeg_path, "-protocols"], "ffmpeg_protocols", get_error_message("protocolos"))),
-        threading.Thread(target=run_command, args=([ffmpeg_path, "-filters"], "ffmpeg_filters", get_error_message("filtros"))),
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-formats"], "ffmpeg_formats", get_error_message("formats"))),
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-protocols"], "ffmpeg_protocols", get_error_message("protocols"))),
+        threading.Thread(target=run_command, args=([ffmpeg_path, "-filters"], "ffmpeg_filters", get_error_message("filters"))),
     ]
 
     for thread in threads:
@@ -313,16 +299,16 @@ def show_ffmpeg_info():
     for thread in threads:
         thread.join()
 
-    ffmpeg_version = results["ffmpeg_version_output"].split()[2] if "ffmpeg_version_output" in results else t("unknown")
+    ffmpeg_version = results["ffmpeg_version_output"].split()[2] if "ffmpeg_version_output" in results else language.get("unknown", "Unknown")
 
     version_info = (
         f"FFmpeg:\n{results.get('ffmpeg_version_output', '')}\n\n"
-        f"{t('build_configuration')}:\n{results.get('ffmpeg_buildconf', '')}\n\n"
+        f"{language.get('build_configuration', 'Build Configuration')}:\n{results.get('ffmpeg_buildconf', '')}\n\n"
     )
     
     # Cria a janela com a versão do FFmpeg no título
     info_window = tk.Toplevel(root)
-    info_window.title(f"{t('ffmpeg_info')} - {ffmpeg_version}")
+    info_window.title(f"{language.get('ffmpeg_info', 'FFmpeg Info')} - {ffmpeg_version}")
     
     notebook = ttk.Notebook(info_window)
     notebook.pack(fill='both', expand=True)
@@ -339,11 +325,11 @@ def show_ffmpeg_info():
         notebook.add(frame, text=title)
 
     # Adicionar abas com as informações
-    add_tab(t("version_and_config"), version_info)
-    add_tab(t("codecs"), results.get('ffmpeg_codecs', ''))
-    add_tab(t("formats"), results.get('ffmpeg_formats', ''))
-    add_tab(t("protocols"), results.get('ffmpeg_protocols', ''))
-    add_tab(t("filters"), results.get('ffmpeg_filters', ''))
+    add_tab(language.get("version_and_config", "Version and Configuration"), version_info)
+    add_tab(language.get("codecs", "Codecs"), results.get('ffmpeg_codecs', ''))
+    add_tab(language.get("formats", "Formats"), results.get('ffmpeg_formats', ''))
+    add_tab(language.get("protocols", "Protocols"), results.get('ffmpeg_protocols', ''))
+    add_tab(language.get("filters", "Filters"), results.get('ffmpeg_filters', ''))
     add_tab("ffprobe", results.get('ffprobe_output', ''))
 
 
@@ -351,17 +337,17 @@ def show_ffmpeg_info():
 def convert_videos():
     files = file_list.get(0, tk.END)
     if not files:
-        messagebox.showwarning(t("warning"), t("no_video_selected"))
+        messagebox.showwarning(language.get("warning", "Warning"), language.get("no_video_selected", "No video files selected."))
         return
 
     ffmpeg_path = ffmpeg_path_entry.get()
     if not os.path.exists(ffmpeg_path):
-        messagebox.showerror(t("error"), t("ffmpeg_path_not_found"))
+        messagebox.showerror(language.get("error", "Error"), language.get("ffmpeg_path_not_found", "FFmpeg path not found. Please ensure the path is correct."))
         return
 
     # Verificação de diretório de saída
     if not use_same_directory_var.get() and not output_dir_entry.get():
-        messagebox.showerror(t("error"), t("output_directory_error"))
+        messagebox.showerror(language.get("error", "Error"), language.get("output_directory_error", "Please select an output directory or check 'Use same directory as input file'."))
         return
     
     output_format = format_var.get()
@@ -387,7 +373,7 @@ def convert_videos():
         else:
             output_dir = output_dir_entry.get()
 
-        output_dir = os.path.join(output_dir, t("converted_files_folder"))
+        output_dir = os.path.join(output_dir, language.get("converted_files_folder", "Converted Files"))
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
@@ -397,7 +383,7 @@ def convert_videos():
             output_file = os.path.join(output_dir, base_name + '.' + output_format)
 
             if not overwrite_var.get() and os.path.exists(output_file):
-                messagebox.showerror(t("error"), f"{t('file_exists_error')} '{output_file}'.")
+                messagebox.showerror(language.get("error", "Error"), f"{language.get('file_exists_error', 'The file')} '{output_file}' {language.get('already_exists', 'already exists and cannot be overwritten.')}")
                 return
 
             command = [
@@ -414,7 +400,7 @@ def convert_videos():
             ]
 
             # Atualizar a exibição do nome do arquivo em conversão
-            individual_progress_label.config(text=f"{t('converting')}: {os.path.basename(input_file)}")
+            individual_progress_label.config(text=f"{language.get('converting', 'Converting')}: {os.path.basename(input_file)}")
 
             try:
                 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, creationflags=subprocess.CREATE_NO_WINDOW)
@@ -428,15 +414,15 @@ def convert_videos():
                 process.wait()
 
             except Exception as e:
-                messagebox.showerror(t("error"), f"{t('conversion_error')} {e}")
+                messagebox.showerror(language.get("error", "Error"), f"{language.get('conversion_error', 'Failed to convert video.')}\n{language.get('error_details', 'Error details')}: {e}")
                 return
 
             total_progress['value'] += 1
             root.update_idletasks()
 
         # Mostrar a mensagem de conclusão com o caminho completo
-        success_message = f"{t('conversion_complete')}\n{t('files_saved_in')}: {output_dir}"
-        result = messagebox.askyesno(t("success"), success_message + f"\n\n{t('open_folder')}?")
+        success_message = f"{language.get('conversion_complete', 'Video conversion complete.')}\n{language.get('files_saved_in', 'Files saved in')}: {output_dir}"
+        result = messagebox.askyesno(language.get("success", "Success"), success_message + f"\n\n{language.get('open_folder', 'Do you want to open the folder with the converted files?')}")
 
         if result:
             if platform.system() == "Windows":
@@ -477,7 +463,7 @@ def update_command_display():
     else:
         output_dir = output_dir_entry.get()
 
-    output_dir = os.path.join(output_dir, t("converted_files_folder"))
+    output_dir = os.path.join(output_dir, language.get("converted_files_folder", "Converted Files"))
     base_name = os.path.splitext(os.path.basename(first_file))[0]
     output_file = os.path.join(output_dir, base_name + '.' + output_format)
 
@@ -524,13 +510,13 @@ def toggle_output_directory():
 
 # Função para exibir informações sobre o programa
 def show_about():
-    messagebox.showinfo("About", f"Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \n{t('version')} 9.0.0 \n22/08/2024")
+    messagebox.showinfo("About", f"Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \n{language.get('version', 'Version')} 9.0.0 \n22/08/2024")
 
 # Função para exibir informações do arquivo de vídeo
 def show_video_info():
     files = file_list.get(0, tk.END)
     if not files:
-        messagebox.showwarning(t("warning"), t("no_video_selected"))
+        messagebox.showwarning(language.get("warning", "Warning"), language.get("no_video_selected", "No video files selected."))
         return
 
     ffmpeg_path = ffmpeg_path_entry.get()
@@ -538,13 +524,13 @@ def show_video_info():
 
     if not os.path.exists(ffprobe_path):
         if platform.system() == 'Darwin':
-            messagebox.showinfo("MacOS", t("macos_download_ffmpeg"))
+            messagebox.showinfo("MacOS", language.get("macos_download_ffmpeg", "Please download FFmpeg and ffprobe manually from https://evermeet.cx/ffmpeg/"))
         else:
-            messagebox.showerror(t("error"), t("ffprobe_path_not_found"))
+            messagebox.showerror(language.get("error", "Error"), language.get("ffprobe_path_not_found", "ffprobe path not found. Please ensure the path is correct."))
         return
 
     info_window = tk.Toplevel()
-    info_window.title(t("detailed_video_info"))
+    info_window.title(language.get("detailed_video_info", "Detailed Video Information"))
 
     # Ajustar a largura da janela secundária para ser igual à do programa principal
     window_width = root.winfo_width()
@@ -559,60 +545,60 @@ def show_video_info():
             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = process.communicate()
             if process.returncode != 0:
-                raise Exception(f"{t('ffprobe_error')}: {err}")
+                raise Exception(f"{language.get('ffprobe_error', 'Error running ffprobe')}: {err}")
 
             info_data = json.loads(out)
-            info_text = f"{t('file_info')}: {os.path.basename(input_file)}\n\n"
+            info_text = f"{language.get('file_info', 'File Information')}: {os.path.basename(input_file)}\n\n"
             audio_count = 0
             for stream in info_data.get('streams', []):
                 if stream['codec_type'] == 'video':
-                    info_text += f"{t('video_stream')}\n"
+                    info_text += f"{language.get('video_stream', 'Video Stream')}\n"
                     info_keys = ['codec_long_name', 'width', 'height', 'r_frame_rate']
                 elif stream['codec_type'] == 'audio':
                     audio_count += 1
-                    info_text += f"{t('audio_stream')} {audio_count}\n"
+                    info_text += f"{language.get('audio_stream', 'Audio Stream')} {audio_count}\n"
                     info_keys = ['codec_long_name', 'channels', 'sample_rate', 'bit_rate']
 
                 for key in info_keys:
                     if key in stream:
                         value = stream[key]
                         if key == 'codec_long_name':
-                            description = t("codec")
+                            description = language.get("codec", "Codec")
                         elif key == 'width':
-                            description = t("width")
-                            value = f"{value} {t('pixels')}"
+                            description = language.get("width", "Width")
+                            value = f"{value} {language.get('pixels', 'pixels')}"
                         elif key == 'height':
-                            description = t("height")
-                            value = f"{value} {t('pixels')}"
+                            description = language.get("height", "Height")
+                            value = f"{value} {language.get('pixels', 'pixels')}"
                         elif key == 'channels':
-                            description = t("channels")
-                            value = f"{value} ({t('mono') if value == '1' else t('stereo') if value == '2' else t('multi_channel')})"
+                            description = language.get("channels", "Channels")
+                            value = f"{value} ({language.get('mono', 'mono') if value == '1' else language.get('stereo', 'stereo') if value == '2' else language.get('multi_channel', 'multi-channel')})"
                         elif key == 'sample_rate':
-                            description = t("sample_rate")
+                            description = language.get("sample_rate", "Sample Rate")
                             value += " Hz"
                         elif key == 'r_frame_rate':
                             description = "FPS"
                         elif key == 'bit_rate':
-                            description = t("bitrate")
+                            description = language.get("bitrate", "Bitrate")
                             value = f"{int(value)/1000:.2f} kbps"
                         info_text += f"{description}: {value}\n"
                 info_text += "\n"
 
             if 'format' in info_data:
-                info_text += f"{t('format_info')}\n"
+                info_text += f"{language.get('format_info', 'Format Information')}\n"
                 for key in ['format_name', 'duration', 'size', 'bit_rate']:
                     if key in info_data['format']:
                         value = info_data['format'][key]
                         if key == 'format_name':
-                            description = t("format")
+                            description = language.get("format", "Format")
                         elif key == 'duration':
-                            description = t("duration")
-                            value = f"{float(value):.2f} {t('seconds')}"
+                            description = language.get("duration", "Duration")
+                            value = f"{float(value):.2f} {language.get('seconds', 'seconds')}"
                         elif key == 'size':
-                            description = t("size")
+                            description = language.get("size", "Size")
                             value = f"{int(value)/1024/1024:.2f} MB"
                         elif key == 'bit_rate':
-                            description = t("bitrate")
+                            description = language.get("bitrate", "Bitrate")
                             value = f"{int(value)/1000:.2f} kbps"
                         info_text += f"{description}: {value}\n"
 
@@ -634,7 +620,7 @@ def show_video_info():
             notebook.add(frame, text=os.path.basename(input_file))
 
         except Exception as e:
-            messagebox.showerror(t("error"), f"{t('video_info_error')} {input_file}.\n{t('error')}: {str(e)}")
+            messagebox.showerror(language.get("error", "Error"), f"{language.get('video_info_error', 'Could not retrieve video information for')} {input_file}.\n{language.get('error_details', 'Error details')}: {str(e)}")
 
 # Função para alternar idioma
 def change_language(lang_code):
@@ -644,19 +630,20 @@ def change_language(lang_code):
 
 # Função para atualizar a interface com o novo idioma
 def update_ui_language():
-    about_button.config(text=t("about_program"))
-    info_button.config(text=t("video_info_button"))
-    version_button.config(text=t("ffmpeg_version_button"))
-    download_button.config(text=t("install_ffmpeg"))
-    add_button.config(text=t("add_files_button"))
-    remove_button.config(text=t("remove_files_button"))
-    clear_button.config(text=t("clear_list_button"))
-    use_same_directory_check.config(text=t("use_same_directory"))
-    overwrite_check.config(text=t("overwrite_existing"))
-    default_button.config(text=t("default_options"))
-    load_button.config(text=t("load_config_button"))
-    save_button.config(text=t("save_config_button"))
-    convert_button.config(text=t("convert_button"))
+    about_button.config(text=language.get("about_program", "About the Program"))
+    info_button.config(text=language.get("video_info_button", "Video Info"))
+    version_button.config(text=language.get("ffmpeg_version_button", "FFmpeg Version"))
+    download_button.config(text=language.get("install_ffmpeg", "Install FFmpeg"))
+    add_button.config(text=language.get("add_files_button", "Add File(s)"))
+    remove_button.config(text=language.get("remove_files_button", "Remove File(s)"))
+    clear_button.config(text=language.get("clear_list_button", "Clear List"))
+    use_same_directory_check.config(text=language.get("use_same_directory", "Use same directory as input file"))
+    overwrite_check.config(text=language.get("overwrite_existing", "Overwrite existing files"))
+    default_button.config(text=language.get("default_options", "Default Options"))
+    load_button.config(text=language.get("load_config_button", "Load Configuration"))
+    save_button.config(text=language.get("save_config_button", "Save Configuration"))
+    convert_button.config(text=language.get("convert_button", "Convert"))
+    language_label.config(text=language.get("language", "Language"))
     toggle_output_directory()
 
 # Criar janela principal
@@ -674,17 +661,24 @@ top_button_frame = tk.Frame(root)
 top_button_frame.grid(row=0, column=0, columnspan=4, padx=5, pady=5, sticky="we")
 
 # Botões "Sobre o Programa" e "Codecs do vídeo"
-about_button = tk.Button(top_button_frame, text=t("about_program"), command=show_about, font=("TkDefaultFont", 9))
+about_button = tk.Button(top_button_frame, text=language.get("about_program", "About the Program"), command=show_about, font=("TkDefaultFont", 9))
 about_button.pack(side="left", padx=5)
-info_button = tk.Button(top_button_frame, text=t("video_info_button"), command=show_video_info, font=("TkDefaultFont", 9))
+info_button = tk.Button(top_button_frame, text=language.get("video_info_button", "Video Info"), command=show_video_info, font=("TkDefaultFont", 9))
 info_button.pack(side="left", padx=5)
-version_button = tk.Button(top_button_frame, text=t("ffmpeg_version_button"), command=show_ffmpeg_info, font=("TkDefaultFont", 9))
+version_button = tk.Button(top_button_frame, text=language.get("ffmpeg_version_button", "FFmpeg Version"), command=show_ffmpeg_info, font=("TkDefaultFont", 9))
 version_button.pack(side="left", padx=5)
-download_button = tk.Button(top_button_frame, text=t("install_ffmpeg"), command=start_download_ffmpeg, font=("TkDefaultFont", 9))
+download_button = tk.Button(top_button_frame, text=language.get("install_ffmpeg", "Install FFmpeg"), command=start_download_ffmpeg, font=("TkDefaultFont", 9))
 download_button.pack(side="left", padx=5)
 
+# Adicionar botão de seleção de idioma
+language_label = tk.Label(top_button_frame, text=language.get("language", "Language"), font=("TkDefaultFont", 9))
+language_label.pack(side="left", padx=5)
+language_var = tk.StringVar(value="pt_br")
+language_option_menu = tk.OptionMenu(top_button_frame, language_var, "pt_br", "en_us", "es_es", "it_it", "de_de", "gn_py", command=change_language)
+language_option_menu.pack(side="left", padx=5)
+
 # Label para arquivos selecionados
-tk.Label(root, text=t("selected_files")).grid(row=1, column=0, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("selected_files", "Selected Files:")).grid(row=1, column=0, padx=5, pady=5, sticky="w")
 
 # caixa com lista
 # Frame para conter a listbox e a scrollbar
@@ -709,11 +703,11 @@ file_button_frame = tk.Frame(root)
 file_button_frame.grid(row=3, column=0, columnspan=4, padx=5, pady=5, sticky="we")
 
 # Botões para adicionar e remover arquivos
-add_button = tk.Button(file_button_frame, text=t("add_files_button"), command=select_files)
+add_button = tk.Button(file_button_frame, text=language.get("add_files_button", "Add File(s)"), command=select_files)
 add_button.pack(side="left", padx=5)
-remove_button = tk.Button(file_button_frame, text=t("remove_files_button"), command=lambda: [file_list.delete(i) for i in reversed(file_list.curselection())])
+remove_button = tk.Button(file_button_frame, text=language.get("remove_files_button", "Remove File(s)"), command=lambda: [file_list.delete(i) for i in reversed(file_list.curselection())])
 remove_button.pack(side="left", padx=5)
-clear_button = tk.Button(file_button_frame, text=t("clear_list_button"), command=lambda: file_list.delete(0, tk.END))
+clear_button = tk.Button(file_button_frame, text=language.get("clear_list_button", "Clear List"), command=lambda: file_list.delete(0, tk.END))
 clear_button.pack(side="left", padx=5)
 # fim caixa botões add/remove
 
@@ -722,80 +716,80 @@ output_frame = tk.Frame(root)
 output_frame.grid(row=4, column=0, columnspan=4, padx=5, pady=5, sticky="we")
 
 # Diretório de saída
-tk.Label(output_frame, text=t("output_directory")).pack(side="left", padx=5)
+tk.Label(output_frame, text=language.get("output_directory", "Output Directory:")).pack(side="left", padx=5)
 output_dir_entry = tk.Entry(output_frame, width=70)
 output_dir_entry.pack(side="left", expand=True, fill="x", padx=5)
-output_dir_button = tk.Button(output_frame, text=t("browse"), command=select_output_directory)
+output_dir_button = tk.Button(output_frame, text=language.get("browse", "Browse"), command=select_output_directory)
 output_dir_button.pack(side="left", padx=5)
 
 # Caixa de seleção para usar o mesmo diretório do arquivo de vídeo
 use_same_directory_var = tk.BooleanVar()
-use_same_directory_check = tk.Checkbutton(root, text=t("use_same_directory"), variable=use_same_directory_var, command=toggle_output_directory)
+use_same_directory_check = tk.Checkbutton(root, text=language.get("use_same_directory", "Use same directory as input file"), variable=use_same_directory_var, command=toggle_output_directory)
 use_same_directory_check.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
 # Checkbox para sobrescrever arquivos
 overwrite_var = tk.BooleanVar()
-overwrite_check = tk.Checkbutton(root, text=t("overwrite_existing"), variable=overwrite_var)
+overwrite_check = tk.Checkbutton(root, text=language.get("overwrite_existing", "Overwrite existing files"), variable=overwrite_var)
 overwrite_check.grid(row=5, column=2, columnspan=2, padx=5, pady=5, sticky="w")
 
 # Formato de saída
-tk.Label(root, text=t("output_format")).grid(row=6, column=0, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("output_format", "Output Format:")).grid(row=6, column=0, padx=5, pady=5, sticky="w")
 format_var = tk.StringVar()
 format_menu = tk.OptionMenu(root, format_var, "mp4", "avi", "mkv", "flv", "mov", "mp3", "wmv", "asf")
 format_menu.grid(row=6, column=1, padx=5, pady=5, sticky="w")
 
 # Bitrate de vídeo
-tk.Label(root, text=t("video_bitrate")).grid(row=7, column=0, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("video_bitrate", "Video Bitrate (e.g., 204800):")).grid(row=7, column=0, padx=5, pady=5, sticky="w")
 video_bitrate_entry = tk.Entry(root, width=20)
 video_bitrate_entry.grid(row=7, column=1, padx=5, pady=5, sticky="w")
 
 # Bitrate de áudio
-tk.Label(root, text=t("audio_bitrate")).grid(row=7, column=2, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("audio_bitrate", "Audio Bitrate (e.g., 65536):")).grid(row=7, column=2, padx=5, pady=5, sticky="w")
 audio_bitrate_entry = tk.Entry(root, width=20)
 audio_bitrate_entry.grid(row=7, column=3, padx=5, pady=5, sticky="w")
 
 # Resolução
-tk.Label(root, text=t("resolution")).grid(row=8, column=0, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("resolution", "Resolution:")).grid(row=8, column=0, padx=5, pady=5, sticky="w")
 resolution_var = tk.StringVar()
 resolution_menu = tk.OptionMenu(root, resolution_var, "original", "1920x1080", "1280x720", "640x480", "320x240")
 resolution_menu.grid(row=8, column=1, padx=5, pady=5, sticky="w")
 
 # Codec de vídeo
-tk.Label(root, text=t("video_codec")).grid(row=8, column=2, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("video_codec", "Video Codec:")).grid(row=8, column=2, padx=5, pady=5, sticky="w")
 video_codec_var = tk.StringVar()
 video_codec_menu = tk.OptionMenu(root, video_codec_var, "auto", "libx264", "libx265", "mpeg4", "wmv2")
 video_codec_menu.grid(row=8, column=3, padx=5, pady=5, sticky="w")
 
 # Codec de áudio
-tk.Label(root, text=t("audio_codec")).grid(row=9, column=0, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("audio_codec", "Audio Codec:")).grid(row=9, column=0, padx=5, pady=5, sticky="w")
 audio_codec_var = tk.StringVar()
 audio_codec_menu = tk.OptionMenu(root, audio_codec_var, "auto", "aac", "mp3", "ac3", "wmav2")
 audio_codec_menu.grid(row=9, column=1, padx=5, pady=5, sticky="w")
 
 # Taxa de quadros
-tk.Label(root, text=t("frame_rate")).grid(row=9, column=2, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("frame_rate", "Frame Rate (e.g., 20):")).grid(row=9, column=2, padx=5, pady=5, sticky="w")
 frame_rate_entry = tk.Entry(root, width=20)
 frame_rate_entry.grid(row=9, column=3, padx=5, pady=5, sticky="w")
 
 # Taxa de amostragem de áudio
-tk.Label(root, text=t("audio_sample_rate")).grid(row=10, column=0, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("audio_sample_rate", "Audio Sample Rate (e.g., 22050):")).grid(row=10, column=0, padx=5, pady=5, sticky="w")
 audio_sample_rate_entry = tk.Entry(root, width=20)
 audio_sample_rate_entry.grid(row=10, column=1, padx=5, pady=5, sticky="w")
 
 # Canais de áudio
-tk.Label(root, text=t("audio_channels")).grid(row=10, column=2, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("audio_channels", "Audio Channels:")).grid(row=10, column=2, padx=5, pady=5, sticky="w")
 audio_channels_var = tk.StringVar()
 audio_channels_menu = tk.OptionMenu(root, audio_channels_var, "1", "2")
 audio_channels_menu.grid(row=10, column=3, padx=5, pady=5, sticky="w")
 
 # Caminho do FFmpeg
-tk.Label(root, text=t("ffmpeg_path")).grid(row=11, column=0, padx=5, pady=5, sticky="w")
+tk.Label(root, text=language.get("ffmpeg_path", "FFmpeg Path:")).grid(row=11, column=0, padx=5, pady=5, sticky="w")
 ffmpeg_path_entry = tk.Entry(root, width=70)
 ffmpeg_path_entry.grid(row=11, column=1, columnspan=2, padx=5, pady=5, sticky="we")
-tk.Button(root, text=t("browse"), command=select_ffmpeg_executable).grid(row=11, column=3, padx=5, pady=5)
+tk.Button(root, text=language.get("browse", "Browse"), command=select_ffmpeg_executable).grid(row=11, column=3, padx=5, pady=5)
 
 # Caixa do comando do FFmpeg
-tk.Label(root, text=t("ffmpeg_command")).grid(row=12, column=0, padx=5, pady=5, sticky="nw")
+tk.Label(root, text=language.get("ffmpeg_command", "FFmpeg Command:")).grid(row=12, column=0, padx=5, pady=5, sticky="nw")
 command_display = tk.Text(root, height=4, width=70, font=("TkDefaultFont", 9))
 command_display.grid(row=12, column=1, columnspan=3, padx=5, pady=5, sticky="we")
 
@@ -808,34 +802,21 @@ individual_progress_label = tk.Label(root, text="", font=("TkDefaultFont", 9))
 individual_progress_label.grid(row=13, column=2, columnspan=2, padx=5, pady=5, sticky="we")
 
 # Botão para aplicar opções padrão
-default_button = tk.Button(root, text=t("default_options"), command=set_default_options)
+default_button = tk.Button(root, text=language.get("default_options", "Default Options"), command=set_default_options)
 default_button.grid(row=14, column=0, padx=5, pady=5, sticky="we")
 
 # Botão para carregar opções salvas
-load_button = tk.Button(root, text=t("load_config_button"), command=load_config_from_file)
+load_button = tk.Button(root, text=language.get("load_config_button", "Load Configuration"), command=load_config_from_file)
 load_button.grid(row=14, column=1, padx=5, pady=5, sticky="we")
 
 # Botão para salvar configurações
-save_button = tk.Button(root, text=t("save_config_button"), command=save_config)
+save_button = tk.Button(root, text=language.get("save_config_button", "Save Configuration"), command=save_config)
 save_button.grid(row=14, column=2, padx=5, pady=5, sticky="we")
 
 # Botão para converter vídeos
-convert_button = tk.Button(root, text=t("convert_button"), command=convert_videos, font=("TkDefaultFont", 11, "bold"))
+convert_button = tk.Button(root, text=language.get("convert_button", "Convert"), command=convert_videos, font=("TkDefaultFont", 11, "bold"))
 convert_button.grid(row=14, column=3, padx=5, pady=5, sticky="we")
 
-# Opções de idioma
-language_frame = tk.Frame(root)
-language_frame.grid(row=15, column=0, columnspan=4, padx=5, pady=5, sticky="we")
-
-language_label = tk.Label(language_frame, text=t("language"))
-language_label.pack(side="left", padx=5)
-
-language_var = tk.StringVar(value="pt_br")
-language_option_menu = tk.OptionMenu(language_frame, language_var, "pt_br", "en_us", "es_es", "it_it", "de_de", "gn_py", command=change_language)
-language_option_menu.pack(side="left", padx=5)
-
-# Aplicar configurações padrão no início, sem exibir mensagem
-set_default_options()
-
 # Executar o loop principal da interface
+set_default_options()
 root.mainloop()
