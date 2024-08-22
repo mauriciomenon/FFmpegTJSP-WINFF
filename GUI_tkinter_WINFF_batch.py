@@ -164,6 +164,20 @@ def select_ffmpeg_executable():
         config.write(configfile)
     update_command_display()
 
+def show_installing_window(install_path):
+    installing_window = tk.Toplevel(root)
+    installing_window.title("Instalação em Andamento")
+    installing_window.geometry("400x150")
+    installing_window.resizable(False, False)
+    
+    tk.Label(installing_window, text="Instalando FFmpeg, por favor aguarde...").pack(pady=10)
+    tk.Label(installing_window, text=f"Instalando em: {install_path}").pack(pady=5)
+    
+    progress_bar = ttk.Progressbar(installing_window, orient="horizontal", mode="determinate", length=300)
+    progress_bar.pack(pady=10)
+    
+    return installing_window, progress_bar
+
 def download_ffmpeg():
     download_url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
     dest_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin')
@@ -287,7 +301,7 @@ def show_ffmpeg_info():
     # Função para adicionar uma aba com um Text widget e Scrollbar
     def add_tab(title, content):
         frame = tk.Frame(notebook)
-        text_widget = tk.Text(frame, wrap='word', height=30, width=100)
+        text_widget = tk.Text(frame, wrap='word', height=40, width=100)
         text_widget.insert('end', content)
         text_widget.pack(side='left', fill='both', expand=True)
         scrollbar = tk.Scrollbar(frame, orient='vertical', command=text_widget.yview)
@@ -349,7 +363,7 @@ def convert_videos():
             os.makedirs(output_dir)
 
         for index, input_file in enumerate(files):
-
+            
             base_name = os.path.splitext(os.path.basename(input_file))[0]
             output_file = os.path.join(output_dir, base_name + '.' + output_format)
 
@@ -370,18 +384,17 @@ def convert_videos():
                 output_file
             ]
 
-            individual_progress['maximum'] = 100
-            individual_progress['value'] = 0
+            # Atualizar a exibição do nome do arquivo em conversão
+            individual_progress_label.config(text=f"Convertendo: {os.path.basename(input_file)}")
 
             try:
-                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, creationflags=subprocess.CREATE_NO_WINDOW)
 
                 while True:
                     output = process.stderr.readline()
                     if output == '' and process.poll() is not None:
                         break
-                    if output:
-                        root.update_idletasks()
+                    root.update_idletasks()
 
                 process.wait()
 
@@ -390,7 +403,6 @@ def convert_videos():
                 return
 
             total_progress['value'] += 1
-            individual_progress['value'] = 100
             root.update_idletasks()
 
         # Mostrar a mensagem de conclusão com o caminho completo
@@ -483,7 +495,7 @@ def toggle_output_directory():
 
 # Função para exibir informações sobre o programa
 def show_about():
-    messagebox.showinfo("About", "Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \nVersão 8.5.0 \n22/08/2024")
+    messagebox.showinfo("About", "Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \nVersão 9.0.0 \n22/08/2024")
 
 # Função para exibir informações do arquivo de vídeo
 def show_video_info():
@@ -739,9 +751,9 @@ command_display.grid(row=12, column=1, columnspan=3, padx=5, pady=5, sticky="we"
 total_progress = ttk.Progressbar(root, orient="horizontal", mode="determinate")
 total_progress.grid(row=13, column=0, columnspan=2, padx=5, pady=5, sticky="we")
 
-# Barra de progresso individual
-individual_progress = ttk.Progressbar(root, orient="horizontal", mode="determinate")
-individual_progress.grid(row=13, column=2, columnspan=2, padx=5, pady=5, sticky="we")
+# Substituindo a barra de progresso individual pelo Label que mostra o nome do arquivo em conversão
+individual_progress_label = tk.Label(root, text="", font=("TkDefaultFont", 9))
+individual_progress_label.grid(row=13, column=2, columnspan=2, padx=5, pady=5, sticky="we")
 
 # Botão para aplicar opções padrão
 default_button = tk.Button(root, text="Opções Padrão (TJSP)", command=set_default_options)
