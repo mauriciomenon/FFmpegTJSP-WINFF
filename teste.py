@@ -602,6 +602,9 @@ def update_ui_language():
     if selected_files_label is not None:
         selected_files_label.destroy()
 
+    # Forçar a interface a se atualizar e garantir que o label antigo foi removido
+    root.update_idletasks()
+
     # Recrie o label com o novo texto
     selected_files_label = tk.Label(root, text=language.get("selected_files", "Selected Files:"), anchor="w")
     selected_files_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
