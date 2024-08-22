@@ -24,7 +24,6 @@ def get_default_ffmpeg_path():
     executable_name = 'ffmpeg.exe' if platform.system() == 'Windows' else 'ffmpeg'
     return os.path.join(base_path, executable_name)
 
-
 # Inicializar o objeto de configuração
 config = configparser.ConfigParser()
 config_file = 'config.ini'
@@ -234,47 +233,53 @@ def download_ffmpeg():
 def start_download_ffmpeg():
     download_thread = threading.Thread(target=download_ffmpeg)
     download_thread.start()
-    
-def show_ffmpeg_version():
+
+def show_ffmpeg_info():
     ffmpeg_path = ffmpeg_path_entry.get()
     ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe' if platform.system() == 'Darwin' else 'ffprobe.exe')
 
     try:
-        ffmpeg_version = subprocess.check_output([ffmpeg_path, "-version"], universal_newlines=True).strip()
+        ffmpeg_version = subprocess.check_output([ffmpeg_path, "-version"], universal_newlines=True)
+        ffmpeg_buildconf = subprocess.check_output([ffmpeg_path, "-buildconf"], universal_newlines=True)
+        ffmpeg_codecs = subprocess.check_output([ffmpeg_path, "-codecs"], universal_newlines=True)
+        ffmpeg_formats = subprocess.check_output([ffmpeg_path, "-formats"], universal_newlines=True)
+        ffmpeg_protocols = subprocess.check_output([ffmpeg_path, "-protocols"], universal_newlines=True)
+        ffmpeg_filters = subprocess.check_output([ffmpeg_path, "-filters"], universal_newlines=True)
+        ffmpeg_bsfs = subprocess.check_output([ffmpeg_path, "-bsfs"], universal_newlines=True)
     except Exception as e:
-        ffmpeg_version = f"Erro ao obter a versão do FFmpeg: {str(e)}"
+        messagebox.showerror("Erro", f"Erro ao obter informações do FFmpeg: {str(e)}")
+        return
 
-    try:
-        ffprobe_version = subprocess.check_output([ffprobe_path, "-version"], universal_newlines=True).strip()
-    except Exception as e:
-        ffprobe_version = f"Erro ao obter a versão do ffprobe: {str(e)}"
-    
-    try:
-        ffmpeg_buildconf = subprocess.check_output([ffmpeg_path, "-buildconf"], universal_newlines=True).strip()
-    except Exception as e:
-        ffmpeg_buildconf = f"Erro ao obter a configuração de build do FFmpeg: {str(e)}"
-    
-    try:
-        ffmpeg_codecs = subprocess.check_output([ffmpeg_path, "-codecs"], universal_newlines=True).strip()
-    except Exception as e:
-        ffmpeg_codecs = f"Erro ao obter a lista de codecs do FFmpeg: {str(e)}"
-    
-    try:
-        ffmpeg_formats = subprocess.check_output([ffmpeg_path, "-formats"], universal_newlines=True).strip()
-    except Exception as e:
-        ffmpeg_formats = f"Erro ao obter a lista de formatos do FFmpeg: {str(e)}"
-    
-    version_info = (
-        f"FFmpeg:\n{ffmpeg_version}\n\n"
-        f"ffprobe:\n{ffprobe_version}\n\n"
-        f"Configuração de Build do FFmpeg:\n{ffmpeg_buildconf}\n\n"
-        f"Codecs suportados pelo FFmpeg:\n{ffmpeg_codecs}\n\n"
-        f"Formatos suportados pelo FFmpeg:\n{ffmpeg_formats}\n\n"
-    )
-    
-    # Limita a quantidade de texto exibido para não sobrecarregar a caixa de diálogo
-    messagebox.showinfo("Versão do FFmpeg e ffprobe", version_info[:2000] + "\n\n...Informações limitadas para exibição. Confira no terminal para mais detalhes.")
+    # Criar uma janela para exibir as informações
+    info_window = tk.Toplevel(root)
+    info_window.title("Informações do FFmpeg")
 
+    # Criar um notebook com abas
+    notebook = ttk.Notebook(info_window)
+    notebook.pack(fill='both', expand=True)
+
+    # Função auxiliar para adicionar uma aba com um texto rolável
+    def add_tab(title, content):
+        frame = tk.Frame(notebook)
+        text_widget = tk.Text(frame, wrap='word', height=40, width=100)
+        text_widget.insert('end', content)
+        text_widget.config(state='normal')  # Permite copiar texto
+        text_widget.pack(side='left', fill='both', expand=True)
+
+        scrollbar = tk.Scrollbar(frame, orient='vertical', command=text_widget.yview)
+        text_widget.config(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side='right', fill='y')
+
+        notebook.add(frame, text=title)
+
+    # Adicionar abas com diferentes informações
+    add_tab("Versão", ffmpeg_version)
+    add_tab("Configuração de Build", ffmpeg_buildconf)
+    add_tab("Codecs", ffmpeg_codecs)
+    add_tab("Formatos", ffmpeg_formats)
+    add_tab("Protocolos", ffmpeg_protocols)
+    add_tab("Filtros", ffmpeg_filters)
+    add_tab("Bitstream Filters", ffmpeg_bsfs)
 
 # Função para converter vídeos em lote
 def convert_videos():
@@ -304,7 +309,6 @@ def convert_videos():
     frame_rate = frame_rate_entry.get()
     audio_sample_rate = audio_sample_rate_entry.get()
     audio_channels = audio_channels_var.get()
-
 
     def run_conversion():
         total_files = len(files)
@@ -380,7 +384,6 @@ def convert_videos():
 
     conversion_thread = threading.Thread(target=run_conversion)
     conversion_thread.start()
-
 
 # Função para atualizar a exibição do comando FFmpeg
 def update_command_display():
@@ -569,40 +572,6 @@ def show_video_info():
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível obter informações do vídeo {input_file}.\nErro: {str(e)}")
 
-
-# Função para exibir a versão do FFmpeg e do ffprobe
-def show_ffmpeg_version():
-    ffmpeg_path = ffmpeg_path_entry.get()
-    ffprobe_path = os.path.join(os.path.dirname(ffmpeg_path), 'ffprobe' if platform.system() == 'Darwin' else 'ffprobe.exe')
-
-    try:
-        ffmpeg_version = subprocess.check_output([ffmpeg_path, "-version"], universal_newlines=True).splitlines()[0]
-    except Exception as e:
-        ffmpeg_version = f"Erro ao obter a versão do FFmpeg: {str(e)}"
-
-    try:
-        ffprobe_version = subprocess.check_output([ffprobe_path, "-version"], universal_newlines=True).splitlines()[0]
-    except Exception as e:
-        ffprobe_version = f"Erro ao obter a versão do ffprobe: {str(e)}"
-
-    version_info = f"FFmpeg: {ffmpeg_version}\nffprobe: {ffprobe_version}"
-    
-    messagebox.showinfo("Versão do FFmpeg e ffprobe", version_info)
-
-def show_installing_window(install_path):
-    installing_window = tk.Toplevel(root)
-    installing_window.title("Instalação em Andamento")
-    installing_window.geometry("400x150")
-    installing_window.resizable(False, False)
-    
-    tk.Label(installing_window, text="Instalando FFmpeg, por favor aguarde...").pack(pady=10)
-    tk.Label(installing_window, text=f"Instalando em: {install_path}").pack(pady=5)
-    
-    progress_bar = ttk.Progressbar(installing_window, orient="horizontal", mode="determinate", length=300)
-    progress_bar.pack(pady=10)
-    
-    return installing_window, progress_bar
-
 # Criar janela principal
 root = tk.Tk()
 root.title("Conversor de Vídeo Avançado - FFmpeg GUI para TJSP")
@@ -622,7 +591,7 @@ about_button = tk.Button(top_button_frame, text="Sobre o Programa", command=show
 about_button.pack(side="left", padx=5)
 info_button = tk.Button(top_button_frame, text="Informações dos videos selecionados", command=show_video_info, font=("TkDefaultFont", 9))
 info_button.pack(side="left", padx=5)
-version_button = tk.Button(top_button_frame, text="Versão do FFmpeg", command=show_ffmpeg_version, font=("TkDefaultFont", 9))
+version_button = tk.Button(top_button_frame, text="Versão do FFmpeg", command=show_ffmpeg_info, font=("TkDefaultFont", 9))
 version_button.pack(side="left", padx=5)
 download_button = tk.Button(top_button_frame, text="Instalar o FFmpeg", command=start_download_ffmpeg, font=("TkDefaultFont", 9))
 download_button.pack(side="left", padx=5)
@@ -655,7 +624,6 @@ file_button_frame.grid(row=3, column=0, columnspan=4, padx=5, pady=5, sticky="we
 # Botões para adicionar e remover arquivos
 add_button = tk.Button(file_button_frame, text="Adicionar Arquivo(s)", command=select_files)
 add_button.pack(side="left", padx=5)
-#remove_button = tk.Button(file_button_frame, text="Remover Arquivo", command=lambda: file_list.delete(tk.ANCHOR))
 remove_button = tk.Button(file_button_frame, text="Remover Arquivo(s)", command=lambda: [file_list.delete(i) for i in reversed(file_list.curselection())])
 remove_button.pack(side="left", padx=5)
 clear_button = tk.Button(file_button_frame, text="Limpar a Lista", command=lambda: file_list.delete(0, tk.END))
@@ -672,8 +640,6 @@ output_dir_entry = tk.Entry(output_frame, width=70)
 output_dir_entry.pack(side="left", expand=True, fill="x", padx=5)
 output_dir_button = tk.Button(output_frame, text="Procurar", command=select_output_directory)
 output_dir_button.pack(side="left", padx=5)
-# Fim do Frame para diretório de saída
-
 
 # Caixa de seleção para usar o mesmo diretório do arquivo de vídeo
 use_same_directory_var = tk.BooleanVar()
