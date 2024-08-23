@@ -37,7 +37,7 @@ def load_language(lang_code):
         return {}
 
 # Carregar o idioma padrão (Português)
-language = load_language("en_us")
+language = load_language("pt_br")
 
 # Função para carregar ou criar configuração
 def load_or_create_config():
