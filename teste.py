@@ -262,10 +262,15 @@ def show_ffmpeg_info():
     
     def run_command(command, key, error_message):
         try:
-            result = subprocess.check_output(command, universal_newlines=True, stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW).strip()
+            # Para Windows
+            if platform.system() == "Windows":
+                result = subprocess.check_output(command, universal_newlines=True, stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW).strip()
+            else:  # Para macOS e Linux
+                result = subprocess.check_output(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).strip()
         except Exception as e:
             result = error_message + str(e)
         results[key] = result
+
 
     threads = [
         threading.Thread(target=run_command, args=([ffmpeg_path, "-version"], "ffmpeg_version_output", get_error_message("version"))),
@@ -379,7 +384,11 @@ def convert_videos():
             individual_progress_label.config(text=f"{language.get('converting', 'Converting')}: {os.path.basename(input_file)}")
 
             try:
-                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                # Para Windows
+                if platform.system() == "Windows":
+                    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                else:  # Para macOS e Linux
+                    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
                 while True:
                     output = process.stderr.readline()
@@ -595,23 +604,8 @@ def change_language(lang_code):
     update_ui_language()
 
 def update_ui_language():
-    global selected_files_label
-    print("Atualizando texto para:", language.get("selected_files", "Selected Files:"))
-
-    # Destrua o label existente, se houver
-    if selected_files_label is not None:
-        selected_files_label.destroy()
-
-    # Forçar a interface a se atualizar e garantir que o label antigo foi removido
-    root.update_idletasks()
-
-    # Recrie o label com o novo texto
-    selected_files_label = tk.Label(root, text=language.get("selected_files", "Selected Files:"), anchor="w")
-    selected_files_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
-
-    # Atualize a interface para garantir que o label seja redesenhado
-    root.update_idletasks()
-    
+    # Atualiza todos os textos da interface carregando do JSON
+    selected_files_label.config(text=language.get("selected_files", "Selected Files:"))
     root.title(language.get("main_window_title", "Advanced Video Converter - FFmpeg GUI"))
     about_button.config(text=language.get("about_program", "About the Program"))
     info_button.config(text=language.get("video_info_button", "Video Information"))
@@ -622,18 +616,6 @@ def update_ui_language():
     clear_button.config(text=language.get("clear_list_button", "Clear List"))
     use_same_directory_check.config(text=language.get("use_same_directory", "Use the same directory as the input file"))
     overwrite_check.config(text=language.get("overwrite_existing", "Overwrite existing files"))
-    default_button.config(text=language.get("default_options", "Default Options"))
-    load_button.config(text=language.get("load_config_button", "Load Configuration"))
-    save_button.config(text=language.get("save_config_button", "Save Configuration"))
-    convert_button.config(text=language.get("convert_button", "Convert"))
-    
-# Labels e botões de texto que não foram atualizados
-    selected_files_label.config(text=language.get("selected_files", "Selected Files:"))
-    output_dir_button.config(text=language.get("browse", "Browse"))
-    ffmpeg_path_button.config(text=language.get("browse", "Browse"))  # Certifique-se de que este botão também seja atualizado
-    
-    
-    output_dir_label.config(text=language.get("output_directory", "Output Directory"))
     format_label.config(text=language.get("output_format", "Output Format"))
     video_bitrate_label.config(text=language.get("video_bitrate", "Video Bitrate"))
     audio_bitrate_label.config(text=language.get("audio_bitrate", "Audio Bitrate"))
@@ -645,8 +627,22 @@ def update_ui_language():
     audio_channels_label.config(text=language.get("audio_channels", "Audio Channels"))
     ffmpeg_path_label.config(text=language.get("ffmpeg_path", "FFmpeg Path"))
     command_label.config(text=language.get("ffmpeg_command", "FFmpeg Command"))
+    output_dir_label.config(text=language.get("output_directory", "Output Directory"))
+    output_dir_button.config(text=language.get("browse", "Browse"))
+    ffmpeg_path_button.config(text=language.get("browse", "Browse"))
+    default_button.config(text=language.get("default_options", "Default Options"))
+    load_button.config(text=language.get("load_config_button", "Load Configuration"))
+    save_button.config(text=language.get("save_config_button", "Save Configuration"))
+    convert_button.config(text=language.get("convert_button", "Convert"))
     language_label.config(text=language.get("language", "Language"))
-    toggle_output_directory()
+
+    root.update_idletasks()
+# nao deveria ser aqui, mas para deixar mais claro
+global root, selected_files_label, about_button, info_button, version_button, download_button
+global add_button, remove_button, clear_button, output_dir_label, output_dir_button
+global format_label, video_bitrate_label, audio_bitrate_label, resolution_label
+global video_codec_label, audio_codec_label, frame_rate_label, audio_sample_rate_label
+global audio_channels_label, ffmpeg_path_label, command_label, convert_button
 
 root = tk.Tk()
 root.title(language.get("main_window_title", "Advanced Video Converter - FFmpeg GUI"))
@@ -656,13 +652,15 @@ if platform.system() == "Darwin":
 else:
     root.geometry("830x700")
 
-# Definir o label para "Arquivos Selecionados" (Selected Files)
-selected_files_label = tk.Label(root, text=language.get("selected_files", "Selected Files:"))
-selected_files_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
-
+# Construção completa da interface
 top_button_frame = tk.Frame(root)
 top_button_frame.grid(row=0, column=0, columnspan=4, padx=5, pady=5, sticky="we")
 
+# Definir o label para "Arquivos Selecionados" (Selected Files) com texto inicial em branco
+selected_files_label = tk.Label(root, text="")
+selected_files_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+
+# Aqui está a correção com o texto sendo carregado a partir do JSON
 about_button = tk.Button(top_button_frame, text=language.get("about_program", "About the Program"), command=show_about, font=("TkDefaultFont", 9))
 about_button.pack(side="left", padx=5)
 info_button = tk.Button(top_button_frame, text=language.get("video_info_button", "Video Information"), command=show_video_info, font=("TkDefaultFont", 9))
@@ -681,8 +679,6 @@ language_label.pack(side="left", padx=5)
 language_var = tk.StringVar(value="pt_br")
 language_option_menu = tk.OptionMenu(language_frame, language_var, "pt_br", "en_us", "es_es", "it_it", "de_de", "gn_py", command=change_language)
 language_option_menu.pack(side="left", padx=5)
-
-tk.Label(root, text=language.get("selected_files", "Selected Files")).grid(row=1, column=0, padx=5, pady=5, sticky="w")
 
 listbox_frame = tk.Frame(root)
 listbox_frame.grid(row=2, column=0, columnspan=4, padx=5, pady=5, sticky="nswe")
