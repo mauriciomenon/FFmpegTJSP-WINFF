@@ -620,17 +620,17 @@ def adjust_window_size_based_on_language():
 
         # Definir larguras mínimas baseadas no idioma
         if current_language == "en_us":
-            min_width = 730  # Ajuste este valor conforme necessário
+            min_width = 760  
         elif current_language == "es_es":
-            min_width = 730  # Ajuste este valor conforme necessário
+            min_width = 800  
         elif current_language == "pt_br":
-            min_width = 830  # Ajuste este valor conforme necessário
+            min_width = 830  
         elif current_language == "it_it":
-            min_width = 830  # Ajuste este valor conforme necessário
+            min_width = 860  
         elif current_language == "de_de":
-            min_width = 850  # Ajuste este valor conforme necessário
+            min_width = 810  
         elif current_language == "gn_py":
-            min_width = 830  # Ajuste este valor conforme necessário
+            min_width = 810  # 
         else:
             min_width = 830  # Valor padrão para outros idiomas
 
@@ -648,7 +648,7 @@ def change_language(lang_code):
 
 def update_ui_language():
     # Definir o comprimento máximo permitido para os textos com base no maior texto
-    max_length = 41  # Pode ajustar este valor conforme necessário
+    max_length = 55  # Pode ajustar este valor conforme necessário
 
     # Atualiza todos os textos da interface carregando do JSON
     selected_files_label.config(text=truncate_text(language.get("selected_files", "Selected Files:"), max_length))
@@ -710,6 +710,7 @@ top_button_frame.grid(row=0, column=0, columnspan=4, padx=5, pady=5, sticky="we"
 
 # Definir o label para "Arquivos Selecionados" (Selected Files) com texto inicial em branco
 selected_files_label = tk.Label(root, text="")
+selected_files_label = tk.Label(root, text=language.get("selected_files", "Selected Files:"))
 selected_files_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
 
 # Aqui está a correção com o texto sendo carregado a partir do JSON

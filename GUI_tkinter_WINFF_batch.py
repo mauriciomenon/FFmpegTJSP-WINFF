@@ -39,6 +39,21 @@ def load_language(lang_code):
 # Carregar o idioma padrão (Português)
 language = load_language("pt_br")
 
+# Função para calcular largura máxima dos textos
+def calculate_max_width(language_data):
+    max_width = 0
+    for key, value in language_data.items():
+        if len(value) > max_width:
+            max_width = len(value)
+    return max_width
+
+# Função para truncar o texto
+def truncate_text(text, max_length):
+    if len(text) > max_length:
+        print(f"Truncating text: {text}")
+        return text[:max_length] + "..."
+    return text
+
 # Função para carregar ou criar configuração
 def load_or_create_config():
     if os.path.exists(config_file):
@@ -491,7 +506,7 @@ def toggle_output_directory():
     update_command_display()
 
 def show_about():
-    messagebox.showinfo(language.get("about_program", "About the Program"), f"Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \n{language.get('version', 'Version')} 9.0.0 \n22/08/2024")
+    messagebox.showinfo(language.get("about_program", "About the Program"), f"Mauricio Menon (+AI) \ngithub.com/mauriciomenon\nPython 3.10 + tk \n{language.get('version', 'Version')} 10.0.0 \n22/08/2024")
 
 def show_video_info():
     files = file_list.get(0, tk.END)
@@ -598,45 +613,76 @@ def show_video_info():
         except Exception as e:
             messagebox.showerror(language.get("error", "Error"), f"{language.get('video_info_error', 'Could not retrieve video information')} {input_file}.\n{language.get('error', 'Error')}: {str(e)}")
 
+def adjust_window_size_based_on_language():
+    if platform.system() != "Darwin":
+        # Determinar o idioma atual
+        current_language = language_var.get()
+
+        # Definir larguras mínimas baseadas no idioma
+        if current_language == "en_us":
+            min_width = 760  
+        elif current_language == "es_es":
+            min_width = 800  
+        elif current_language == "pt_br":
+            min_width = 830  
+        elif current_language == "it_it":
+            min_width = 860  
+        elif current_language == "de_de":
+            min_width = 810  
+        elif current_language == "gn_py":
+            min_width = 810  # 
+        else:
+            min_width = 830  # Valor padrão para outros idiomas
+
+        # Atualizar a geometria da janela
+        root.geometry(f"{min_width}x700")
+
+        # Atualizar o layout, se necessário, para caber na nova largura
+        root.update_idletasks()
+        
 def change_language(lang_code):
     global language
     language = load_language(lang_code)
     update_ui_language()
+    adjust_window_size_based_on_language()
 
 def update_ui_language():
+    # Definir o comprimento máximo permitido para os textos com base no maior texto
+    max_length = 55  # Pode ajustar este valor conforme necessário
+
     # Atualiza todos os textos da interface carregando do JSON
-    selected_files_label.config(text=language.get("selected_files", "Selected Files:"))
-    root.title(language.get("main_window_title", "Advanced Video Converter - FFmpeg GUI"))
-    about_button.config(text=language.get("about_program", "About the Program"))
-    info_button.config(text=language.get("video_info_button", "Video Information"))
-    version_button.config(text=language.get("ffmpeg_version_button", "FFmpeg Version"))
-    download_button.config(text=language.get("install_ffmpeg", "Install FFmpeg"))
-    add_button.config(text=language.get("add_files_button", "Add File(s)"))
-    remove_button.config(text=language.get("remove_files_button", "Remove File(s)"))
-    clear_button.config(text=language.get("clear_list_button", "Clear List"))
-    use_same_directory_check.config(text=language.get("use_same_directory", "Use the same directory as the input file"))
-    overwrite_check.config(text=language.get("overwrite_existing", "Overwrite existing files"))
-    format_label.config(text=language.get("output_format", "Output Format"))
-    video_bitrate_label.config(text=language.get("video_bitrate", "Video Bitrate"))
-    audio_bitrate_label.config(text=language.get("audio_bitrate", "Audio Bitrate"))
-    resolution_label.config(text=language.get("resolution", "Resolution"))
-    video_codec_label.config(text=language.get("video_codec", "Video Codec"))
-    audio_codec_label.config(text=language.get("audio_codec", "Audio Codec"))
-    frame_rate_label.config(text=language.get("frame_rate", "Frame Rate"))
-    audio_sample_rate_label.config(text=language.get("audio_sample_rate", "Audio Sample Rate"))
-    audio_channels_label.config(text=language.get("audio_channels", "Audio Channels"))
-    ffmpeg_path_label.config(text=language.get("ffmpeg_path", "FFmpeg Path"))
-    command_label.config(text=language.get("ffmpeg_command", "FFmpeg Command"))
-    output_dir_label.config(text=language.get("output_directory", "Output Directory"))
-    output_dir_button.config(text=language.get("browse", "Browse"))
-    ffmpeg_path_button.config(text=language.get("browse", "Browse"))
-    default_button.config(text=language.get("default_options", "Default Options"))
-    load_button.config(text=language.get("load_config_button", "Load Configuration"))
-    save_button.config(text=language.get("save_config_button", "Save Configuration"))
-    convert_button.config(text=language.get("convert_button", "Convert"))
-    language_label.config(text=language.get("language", "Language"))
+    selected_files_label.config(text=truncate_text(language.get("selected_files", "Selected Files:"), max_length))
+    root.title(truncate_text(language.get("main_window_title", "Advanced Video Converter - FFmpeg GUI"),60))
+    about_button.config(text=truncate_text(language.get("about_program", "About the Program"), max_length))
+    info_button.config(text=truncate_text(language.get("video_info_button", "Video Information"), max_length))
+    version_button.config(text=truncate_text(language.get("ffmpeg_version_button", "FFmpeg Version"), max_length))
+    download_button.config(text=truncate_text(language.get("install_ffmpeg", "Install FFmpeg"), max_length))
+    add_button.config(text=truncate_text(language.get("add_files_button", "Add File(s)"), max_length))
+    remove_button.config(text=truncate_text(language.get("remove_files_button", "Remove File(s)"), max_length))
+    clear_button.config(text=truncate_text(language.get("clear_list_button", "Clear List"), max_length))
+    use_same_directory_check.config(text=truncate_text(language.get("use_same_directory", "Use the same directory as the input file"), max_length))
+    overwrite_check.config(text=truncate_text(language.get("overwrite_existing", "Overwrite existing files"), max_length))
+    format_label.config(text=truncate_text(language.get("output_format", "Output Format"), max_length))
+    video_bitrate_label.config(text=truncate_text(language.get("video_bitrate", "Video Bitrate"), max_length))
+    audio_bitrate_label.config(text=truncate_text(language.get("audio_bitrate", "Audio Bitrate"), max_length))
+    resolution_label.config(text=truncate_text(language.get("resolution", "Resolution"), max_length))
+    video_codec_label.config(text=truncate_text(language.get("video_codec", "Video Codec"), max_length))
+    audio_codec_label.config(text=truncate_text(language.get("audio_codec", "Audio Codec"), max_length))
+    frame_rate_label.config(text=truncate_text(language.get("frame_rate", "Frame Rate"), max_length))
+    audio_sample_rate_label.config(text=truncate_text(language.get("audio_sample_rate", "Audio Sample Rate"), max_length))
+    audio_channels_label.config(text=truncate_text(language.get("audio_channels", "Audio Channels"), max_length))
+    ffmpeg_path_label.config(text=truncate_text(language.get("ffmpeg_path", "FFmpeg Path"), max_length))
+    command_label.config(text=truncate_text(language.get("ffmpeg_command", "FFmpeg Command"), max_length))
+    output_dir_label.config(text=truncate_text(language.get("output_directory", "Output Directory"), max_length))
+    output_dir_button.config(text=truncate_text(language.get("browse", "Browse"), max_length))
+    ffmpeg_path_button.config(text=truncate_text(language.get("browse", "Browse"), max_length))
+    default_button.config(text=truncate_text(language.get("default_options", "Default Options"), max_length))
+    load_button.config(text=truncate_text(language.get("load_config_button", "Load Configuration"), max_length))
+    save_button.config(text=truncate_text(language.get("save_config_button", "Save Configuration"), max_length))
+    convert_button.config(text=truncate_text(language.get("convert_button", "Convert"), max_length))
 
     root.update_idletasks()
+
 # nao deveria ser aqui, mas para deixar mais claro
 global root, selected_files_label, about_button, info_button, version_button, download_button
 global add_button, remove_button, clear_button, output_dir_label, output_dir_button
@@ -647,10 +693,16 @@ global audio_channels_label, ffmpeg_path_label, command_label, convert_button
 root = tk.Tk()
 root.title(language.get("main_window_title", "Advanced Video Converter - FFmpeg GUI"))
 
+# Definir a variável de idioma antes de ajustar o tamanho da janela
+language_var = tk.StringVar(value="pt_br")  # Idioma padrão
+
 if platform.system() == "Darwin":
     root.geometry("1100x700")
 else:
     root.geometry("830x700")
+
+# Defina a largura inicial da janela com base no idioma e sistema op.
+adjust_window_size_based_on_language()
 
 # Construção completa da interface
 top_button_frame = tk.Frame(root)
@@ -658,6 +710,7 @@ top_button_frame.grid(row=0, column=0, columnspan=4, padx=5, pady=5, sticky="we"
 
 # Definir o label para "Arquivos Selecionados" (Selected Files) com texto inicial em branco
 selected_files_label = tk.Label(root, text="")
+selected_files_label = tk.Label(root, text=language.get("selected_files", "Selected Files:"))
 selected_files_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
 
 # Aqui está a correção com o texto sendo carregado a partir do JSON
@@ -801,4 +854,3 @@ convert_button.grid(row=14, column=3, padx=5, pady=5, sticky="we")
 
 set_default_options()
 root.mainloop()
-
