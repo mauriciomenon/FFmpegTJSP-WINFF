@@ -37,7 +37,7 @@ def load_language(lang_code):
         return {}
 
 # Carregar o idioma padrão (Português)
-language = load_language("pt_br")
+language = load_language("en_us")
 
 # Função para carregar ou criar configuração
 def load_or_create_config():
@@ -652,7 +652,7 @@ root = tk.Tk()
 root.title(language.get("main_window_title", "Advanced Video Converter - FFmpeg GUI"))
 
 if platform.system() == "Darwin":
-    root.geometry("1200x850")
+    root.geometry("1100x700")
 else:
     root.geometry("830x700")
 
