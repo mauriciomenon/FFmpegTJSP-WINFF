@@ -697,7 +697,7 @@ root.title(language.get("main_window_title", "Advanced Video Converter - FFmpeg 
 language_var = tk.StringVar(value="pt_br")  # Idioma padrão
 
 if platform.system() == "Darwin":
-    root.geometry("1100x700")
+    root.geometry("1150x700")
 else:
     root.geometry("830x700")
 
